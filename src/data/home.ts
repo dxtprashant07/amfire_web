@@ -31,37 +31,37 @@ export const services: ServiceItem[] = [
     icon: Globe,
     title: "Web Development",
     description: "Marketing sites, SaaS platforms, admin dashboards — pixel-perfect and production-ready.",
-    href: "/services#web",
+    href: "/services/web-development",
   },
   {
     icon: Smartphone,
     title: "Mobile Apps",
     description: "React Native iOS + Android apps with offline support, push notifications, and app store delivery.",
-    href: "/services#mobile",
+    href: "/services/mobile-apps",
   },
   {
     icon: Brain,
     title: "AI Agents",
     description: "Autonomous agents that perform tasks, coordinate, and make decisions 24/7 without human intervention.",
-    href: "/services#ai",
+    href: "/services/ai-agents",
   },
   {
     icon: Zap,
     title: "Automation",
     description: "Eliminate manual workflows — data pipelines, WhatsApp automation, no-code integrations.",
-    href: "/services#automation",
+    href: "/services/automation",
   },
   {
     icon: Cloud,
     title: "Cloud & DevOps",
     description: "CI/CD pipelines, containerised deployments on AWS/GCP/Hetzner with full SSL and DNS management.",
-    href: "/services#cloud",
+    href: "/services/cloud-devops",
   },
   {
     icon: Palette,
     title: "UI / UX Design",
     description: "Figma-based, user-tested design systems. We design before a single line of code is written.",
-    href: "/services#design",
+    href: "/services/ui-ux-design",
   },
 ];
 

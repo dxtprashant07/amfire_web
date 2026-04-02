@@ -24,6 +24,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/services/ai-agents`,       lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/services/automation`,      lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE_URL}/services/cloud-devops`,    lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE_URL}/services/ui-ux-design`,   lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    // Blog posts
+    { url: `${BASE_URL}/blog/ai-agent-development-india`,   lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/blog/langchain-vs-custom-ai-agents`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/blog/cost-saas-india-2025`,         lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/blog/whatsapp-business-automation`,  lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/blog/edtech-platform-tech-stack`,   lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    // Legal pages
+    { url: `${BASE_URL}/privacy-policy`,           lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
+    { url: `${BASE_URL}/terms-of-service`,         lastModified: now, changeFrequency: "yearly",  priority: 0.3 },
     // Industry sub-pages
     { url: `${BASE_URL}/industries/edtech`,        lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/industries/healthcare`,    lastModified: now, changeFrequency: "monthly", priority: 0.6 },

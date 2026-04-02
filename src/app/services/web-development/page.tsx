@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Globe, CheckCircle2 } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 import { SubpageCaseStudyCarousel } from "@/components/home/SubpageCaseStudyCarousel";
 
 export const metadata: Metadata = {
@@ -247,7 +246,6 @@ export default function WebDevelopmentPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

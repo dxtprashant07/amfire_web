@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Clock, Tag } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { NewsletterForm } from "@/components/home/NewsletterForm";
+
+export const revalidate = 60; // ISR: revalidate every 60 seconds
 
 export const metadata: Metadata = {
   title: "Blog | amfire",
@@ -161,15 +164,8 @@ export default function BlogPage() {
             <p className="text-muted-foreground mb-8 max-w-sm mx-auto">
               No spam. Just high-signal articles on AI engineering and product building.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors"
-              />
-              <button className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all whitespace-nowrap">
-                Subscribe <ArrowRight size={14} />
-              </button>
+            <div className="max-w-md mx-auto">
+              <NewsletterForm />
             </div>
           </ScrollReveal>
         </div>

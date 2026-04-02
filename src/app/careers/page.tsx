@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, MapPin, Clock, Briefcase, Heart, Zap, Users, Globe, Shield } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
+
+export const revalidate = 3600; // ISR: revalidate every hour
 
 export const metadata: Metadata = {
   title: "Careers",
@@ -278,7 +279,6 @@ export default function CareersPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

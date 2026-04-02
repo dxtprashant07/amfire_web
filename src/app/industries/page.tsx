@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, GraduationCap, HeartPulse, ShoppingCart, Building2, TrendingUp, Rocket } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Industries We Serve",
@@ -197,7 +196,6 @@ export default function IndustriesPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

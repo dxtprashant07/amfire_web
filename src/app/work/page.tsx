@@ -4,6 +4,8 @@ import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { Brain, Layers, Users, BarChart3 } from "lucide-react";
 
+export const revalidate = 3600; // ISR: revalidate every hour
+
 export const metadata: Metadata = {
   title: "Work | amfire",
   description:

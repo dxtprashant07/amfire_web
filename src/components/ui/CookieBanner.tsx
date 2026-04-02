@@ -37,8 +37,8 @@ export function CookieBanner() {
       <p className="text-sm font-semibold text-foreground mb-1.5">We use cookies</p>
       <p className="text-xs text-muted-foreground leading-relaxed mb-4">
         We use cookies to improve your experience and analyse site usage.{" "}
-        <Link href="/legal/cookie-policy" className="text-primary hover:underline">
-          Cookie Policy
+        <Link href="/privacy-policy" className="text-primary hover:underline">
+          Privacy Policy
         </Link>
       </p>
 

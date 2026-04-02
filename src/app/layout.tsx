@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { FloatingButtons } from "@/components/ui/FloatingButtons";
 import { CookieBanner } from "@/components/ui/CookieBanner";
 
@@ -56,6 +57,7 @@ export default function RootLayout({
         <main id="main-content" className="flex-1 pt-20">
           {children}
         </main>
+        <Footer />
         <FloatingButtons />
         <CookieBanner />
       </body>

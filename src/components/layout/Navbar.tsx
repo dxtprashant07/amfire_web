@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Sun, Moon } from "lucide-react";
+import { Menu, X, ChevronDown, Sun, Moon, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 const solutionsLinks = [
   { label: "Services Overview", href: "/services" },
@@ -13,6 +14,7 @@ const solutionsLinks = [
   { label: "AI & Agents", href: "/services/ai-agents" },
   { label: "Automation", href: "/services/automation" },
   { label: "Cloud & DevOps", href: "/services/cloud-devops" },
+  { label: "UI / UX Design", href: "/services/ui-ux-design" },
 ];
 
 const workLinks = [
@@ -30,6 +32,7 @@ const aboutLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const { user, clearAuth } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -249,6 +252,35 @@ export function Navbar() {
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
+            {/* Auth */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href={user.role === "CLIENT" ? "/client" : "/admin"}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <LayoutDashboard size={14} />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                    clearAuth();
+                  }}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                Login
+              </Link>
+            )}
+
             {/* CTA */}
             <Link
               href="/contact"
@@ -343,6 +375,33 @@ export function Navbar() {
             <Link href="/contact" className="block py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors">
               Contact
             </Link>
+
+            {user ? (
+              <>
+                <Link
+                  href={user.role === "CLIENT" ? "/client" : "/admin"}
+                  className="flex items-center gap-2 py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/auth/logout", { method: "POST" });
+                    clearAuth();
+                    setMobileOpen(false);
+                  }}
+                  className="flex items-center gap-2 py-3 text-base font-medium text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link href="/login" className="block py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors">
+                Login
+              </Link>
+            )}
 
             <div className="pt-4 flex flex-col gap-3">
               <button

@@ -45,3 +45,5 @@ next-env.d.ts
 # AI tool configs (Claude Code internal files)
 CLAUDE.md
 AGENTS.md
+
+/src/generated/prisma

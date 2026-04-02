@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock, Shield, Zap, Users, MessageSquare, FileText, CreditCard } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "How We Work",
@@ -275,7 +274,6 @@ export default function HowWeWorkPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

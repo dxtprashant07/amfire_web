@@ -1,114 +1,224 @@
-import type { Metadata } from "next";
-import { Mail, Clock, Tag, User } from "lucide-react";
+"use client";
 
-export const metadata: Metadata = { title: "Leads | amfire Admin" };
+import { useState, useEffect } from "react";
+import { authFetch } from "@/lib/stores/auth-store";
+import {
+  Users, ExternalLink, AlertCircle, CheckCircle2, Clock,
+  Phone, Mail, Building2, Calendar, MessageSquare,
+} from "lucide-react";
 
-// Placeholder data — replace with DB fetch when Supabase is wired
-const leads = [
-  { id: 1, name: "Rahul Sharma", email: "rahul@techstartup.in", buildType: "Web App", budget: "₹3L–10L", timeline: "ASAP", message: "Need a SaaS platform for HR management with AI features.", submittedAt: "2025-03-28", status: "New" },
-  { id: 2, name: "Priya Nair", email: "priya@edventures.in", buildType: "AI Agent", budget: "₹1L–3L", timeline: "1 Month", message: "Looking to build an AI tutor for our EdTech platform.", submittedAt: "2025-03-27", status: "In Review" },
-  { id: 3, name: "Arjun Mehta", email: "arjun@clearpath.in", buildType: "Full Product", budget: "₹10L+", timeline: "3 Months", message: "Multi-tenant construction SaaS with AI document processing.", submittedAt: "2025-03-25", status: "Proposal Sent" },
-];
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  service: string | null;
+  budget: string | null;
+  timeline: string | null;
+  message: string;
+  status: string;
+  notes: string | null;
+  assignedTo: string | null;
+  followUpDate: string | null;
+  createdAt: string;
+}
+
+const STATUSES = ["NEW", "CONTACTED", "DISCOVERY", "PROPOSAL", "NEGOTIATION", "WON", "LOST", "NURTURE"];
 
 const statusColors: Record<string, string> = {
-  New: "bg-primary/10 text-primary border-primary/20",
-  "In Review": "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
-  "Proposal Sent": "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
-  Won: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
-  Lost: "bg-destructive/10 text-destructive border-destructive/20",
+  NEW: "bg-blue-500/10 text-blue-600",
+  CONTACTED: "bg-purple-500/10 text-purple-600",
+  DISCOVERY: "bg-cyan-500/10 text-cyan-600",
+  PROPOSAL: "bg-primary/10 text-primary",
+  NEGOTIATION: "bg-yellow-500/10 text-yellow-600",
+  WON: "bg-green-500/10 text-green-600",
+  LOST: "bg-red-500/10 text-red-600",
+  NURTURE: "bg-amber-500/10 text-amber-600",
 };
 
 export default function AdminLeadsPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState("");
+  const [msg, setMsg] = useState({ type: "", text: "" });
+
+  async function fetchLeads() {
+    setLoading(true);
+    const res = await authFetch("/api/admin/leads");
+    if (res.ok) {
+      const d = await res.json();
+      setLeads(d.leads || []);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => { fetchLeads(); }, []);
+
+  async function updateLead(id: string, data: Record<string, unknown>) {
+    const res = await authFetch("/api/admin/leads", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...data }),
+    });
+    if (res.ok) {
+      setMsg({ type: "success", text: "Lead updated" });
+      fetchLeads();
+    } else {
+      setMsg({ type: "error", text: "Failed to update" });
+    }
+    setTimeout(() => setMsg({ type: "", text: "" }), 2000);
+  }
+
+  const newCount = leads.filter((l) => l.status === "NEW").length;
+  const activeCount = leads.filter((l) => !["WON", "LOST"].includes(l.status)).length;
+
   return (
-    <div className="min-h-screen bg-background px-4 sm:px-6 py-10">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-            <p className="text-sm text-muted-foreground mt-1">{leads.length} submissions</p>
-          </div>
-          <span className="text-2xl font-bold tracking-tight">
-            <span className="text-foreground">am</span>
-            <span className="gradient-text">fire</span>
-          </span>
+    <div className="max-w-5xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Leads</h1>
+          <p className="text-sm text-muted-foreground">
+            {leads.length} total · {newCount} new · {activeCount} active
+          </p>
         </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Leads", value: leads.length },
-            { label: "New", value: leads.filter((l) => l.status === "New").length },
-            { label: "In Review", value: leads.filter((l) => l.status === "In Review").length },
-            { label: "Proposals Sent", value: leads.filter((l) => l.status === "Proposal Sent").length },
-          ].map((stat) => (
-            <div key={stat.label} className="p-4 rounded-xl border border-border bg-card">
-              <p className="text-2xl font-bold gradient-text">{stat.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Leads table */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/30">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contact</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Project</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Budget</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Date</th>
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leads.map((lead, i) => (
-                  <tr key={lead.id} className={`border-b border-border last:border-0 hover:bg-secondary/20 transition-colors ${i % 2 === 0 ? "" : "bg-secondary/5"}`}>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center shrink-0">
-                          <User size={14} className="text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{lead.name}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <Mail size={10} />{lead.email}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-secondary border border-border text-foreground">
-                        <Tag size={10} />{lead.buildType}
-                      </span>
-                      <p className="text-xs text-muted-foreground mt-1.5 max-w-[200px] truncate">{lead.message}</p>
-                    </td>
-                    <td className="px-5 py-4 hidden md:table-cell">
-                      <span className="text-foreground font-medium">{lead.budget}</span>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <Clock size={10} />{lead.timeline}
-                      </p>
-                    </td>
-                    <td className="px-5 py-4 hidden lg:table-cell">
-                      <span className="text-xs text-muted-foreground">{lead.submittedAt}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusColors[lead.status] ?? "bg-secondary text-foreground border-border"}`}>
-                        {lead.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <p className="text-xs text-muted-foreground text-center mt-6">
-          Connect Supabase to load live submissions from the database.
-        </p>
+        <a href="https://crm.zoho.in" target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <ExternalLink size={14} /> Zoho CRM
+        </a>
       </div>
+
+      {msg.text && (
+        <div className={`flex items-center gap-2 p-3 mb-4 rounded-lg text-sm ${msg.type === "success" ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"}`}>
+          {msg.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />} {msg.text}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-secondary animate-pulse" />)}
+        </div>
+      ) : leads.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <Users size={40} className="mx-auto mb-3 opacity-40" />
+          <p className="text-sm">No leads yet. They&apos;ll appear here when visitors submit the contact form.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {leads.map((lead) => {
+            const expanded = expandedId === lead.id;
+
+            return (
+              <div key={lead.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                {/* Lead row */}
+                <button
+                  onClick={() => { setExpandedId(expanded ? null : lead.id); setEditNotes(lead.notes || ""); }}
+                  className="w-full flex items-center gap-4 p-4 text-left hover:bg-secondary/30 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-foreground">{lead.name}</p>
+                      {lead.company && (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1"><Building2 size={10} />{lead.company}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Mail size={10} />{lead.email}</span>
+                      {lead.phone && <span className="flex items-center gap-1"><Phone size={10} />{lead.phone}</span>}
+                      {lead.service && <span>{lead.service}</span>}
+                      {lead.budget && <span>{lead.budget}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-[11px] text-muted-foreground">
+                      {new Date(lead.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[lead.status] || ""}`}>
+                      {lead.status}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Expanded detail */}
+                {expanded && (
+                  <div className="px-4 pb-4 border-t border-border pt-4 space-y-4">
+                    {/* Message */}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1"><MessageSquare size={12} /> Message</p>
+                      <p className="text-sm text-foreground bg-secondary/30 p-3 rounded-lg">{lead.message}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Status */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Pipeline Status</label>
+                        <select
+                          value={lead.status}
+                          onChange={(e) => updateLead(lead.id, { status: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        >
+                          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Follow-up date */}
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1"><Calendar size={12} /> Follow-up Date</label>
+                        <input
+                          type="date"
+                          value={lead.followUpDate ? lead.followUpDate.slice(0, 10) : ""}
+                          onChange={(e) => updateLead(lead.id, { followUpDate: e.target.value || undefined })}
+                          className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="text-xs text-muted-foreground space-y-1 pt-6">
+                        {lead.timeline && <p>Timeline: {lead.timeline}</p>}
+                        {lead.budget && <p>Budget: {lead.budget}</p>}
+                        {lead.service && <p>Service: {lead.service}</p>}
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">Internal Notes</label>
+                      <div className="flex gap-2">
+                        <textarea
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                          rows={2}
+                          placeholder="Add internal notes about this lead..."
+                        />
+                        <button
+                          onClick={() => updateLead(lead.id, { notes: editNotes })}
+                          className="px-4 py-2 rounded-lg gradient-bg text-white text-xs font-medium hover:opacity-90 self-end"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quick actions */}
+                    <div className="flex gap-2">
+                      <a href={`mailto:${lead.email}`} className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                        <Mail size={12} /> Email
+                      </a>
+                      {lead.phone && (
+                        <a href={`tel:${lead.phone}`} className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                          <Phone size={12} /> Call
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

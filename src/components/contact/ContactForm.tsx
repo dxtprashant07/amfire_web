@@ -100,7 +100,8 @@ export function ContactForm() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState<FormData>({
     buildType: "",
     budget: "",
@@ -122,14 +123,25 @@ export function ContactForm() {
     return true;
   };
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateFields = () => {
+    const errs: Partial<Record<keyof FormData, string>> = {};
+    if (!formData.name.trim()) errs.name = "Name is required.";
+    if (!formData.email.trim()) errs.email = "Email is required.";
+    else if (!EMAIL_RE.test(formData.email)) errs.email = "Enter a valid email address.";
+    if (!formData.message.trim()) errs.message = "Project description is required.";
+    else if (formData.message.trim().length < 10) errs.message = "Please write at least 10 characters.";
+    return errs;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      setError("Please fill in name, email, and project description.");
-      return;
-    }
+    const errs = validateFields();
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setSubmitting(true);
-    setError("");
+    setFormError("");
 
     try {
       const res = await fetch("/api/contact", {
@@ -143,7 +155,7 @@ export function ContactForm() {
       }
       setSubmitted(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setFormError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -244,24 +256,26 @@ export function ContactForm() {
                 Name <span className="text-primary">*</span>
               </label>
               <input
-                id="name" name="name" type="text" required
+                id="name" name="name" type="text"
                 placeholder="Your name"
                 value={formData.name}
-                onChange={(e) => set("name", e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors"
+                onChange={(e) => { set("name", e.target.value); setFieldErrors((p) => ({ ...p, name: undefined })); }}
+                className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors ${fieldErrors.name ? "border-destructive" : "border-border"}`}
               />
+              {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
             </div>
             <div className="space-y-1.5">
               <label htmlFor="email" className="block text-sm font-medium text-foreground">
                 Email <span className="text-primary">*</span>
               </label>
               <input
-                id="email" name="email" type="email" required
+                id="email" name="email" type="email"
                 placeholder="you@company.com"
                 value={formData.email}
-                onChange={(e) => set("email", e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors"
+                onChange={(e) => { set("email", e.target.value); setFieldErrors((p) => ({ ...p, email: undefined })); }}
+                className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors ${fieldErrors.email ? "border-destructive" : "border-border"}`}
               />
+              {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
             </div>
           </div>
 
@@ -293,15 +307,16 @@ export function ContactForm() {
               Project Description <span className="text-primary">*</span>
             </label>
             <textarea
-              id="message" name="message" required rows={4}
+              id="message" name="message" rows={4}
               placeholder="Tell us what you're building or the problem you're trying to solve..."
               value={formData.message}
-              onChange={(e) => set("message", e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors resize-none"
+              onChange={(e) => { set("message", e.target.value); setFieldErrors((p) => ({ ...p, message: undefined })); }}
+              className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors resize-none ${fieldErrors.message ? "border-destructive" : "border-border"}`}
             />
+            {fieldErrors.message && <p className="text-xs text-destructive">{fieldErrors.message}</p>}
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
 
           <button
             type="submit"

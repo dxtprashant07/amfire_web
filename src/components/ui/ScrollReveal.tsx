@@ -21,6 +21,15 @@ export function ScrollReveal({
   const lastScrollY = useRef(0);
   const [scrollingDown, setScrollingDown] = useState(true);
   const [entering, setEntering] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -50,6 +59,10 @@ export function ScrollReveal({
   const transition = entering
     ? { duration: 0.55, delay: scrollingDown ? delay : 0, ease: [0.16, 1, 0.3, 1] as const }
     : { duration: 0.25, delay: 0, ease: [0.4, 0, 1, 1] as const };
+
+  if (prefersReducedMotion) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
     <motion.div

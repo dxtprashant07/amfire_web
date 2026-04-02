@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 import { TrustedBy } from "@/components/home/TrustedBy";
 import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
 import { AnimatedTagline } from "@/components/home/AnimatedTagline";
@@ -353,7 +352,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

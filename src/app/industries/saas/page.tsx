@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Rocket, CheckCircle2 } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Startups & SaaS",
@@ -242,7 +241,6 @@ export default function SaasPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

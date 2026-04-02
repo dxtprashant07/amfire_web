@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Building2, CheckCircle2 } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Real Estate & PropTech",
@@ -241,7 +240,6 @@ export default function RealEstatePage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

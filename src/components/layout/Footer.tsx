@@ -98,8 +98,8 @@ export function Footer() {
             © {new Date().getFullYear()} amfire. All rights reserved.
           </p>
           <div className="flex items-center gap-3 md:gap-4">
-            <Link href="/privacy" className="text-[10px] md:text-xs text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="text-[10px] md:text-xs text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
+            <Link href="/privacy-policy" className="text-[10px] md:text-xs text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="text-[10px] md:text-xs text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

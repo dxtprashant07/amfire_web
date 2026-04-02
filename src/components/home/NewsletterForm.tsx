@@ -5,16 +5,30 @@ import { ArrowRight } from "lucide-react";
 
 export function NewsletterForm() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setStatus("loading");
-    // Placeholder — wire to real endpoint when backend is ready
-    await new Promise((r) => setTimeout(r, 800));
-    setStatus("success");
-    setEmail("");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || "Something went wrong.");
+      }
+      setStatus("success");
+      setEmail("");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
+      setStatus("error");
+    }
   };
 
   if (status === "success") {
@@ -22,7 +36,9 @@ export function NewsletterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="space-y-1.5">
+      {status === "error" && <p className="text-xs text-destructive">{errorMsg}</p>}
+      <div className="flex gap-2">
       <input
         type="email"
         value={email}
@@ -44,6 +60,7 @@ export function NewsletterForm() {
           <ArrowRight size={14} />
         )}
       </button>
+      </div>
     </form>
   );
 }

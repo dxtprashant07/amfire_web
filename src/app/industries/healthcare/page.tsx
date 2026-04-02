@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, HeartPulse, CheckCircle2 } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Healthcare & MedTech",
@@ -240,7 +239,6 @@ export default function HealthcarePage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

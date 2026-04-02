@@ -2,11 +2,11 @@ import type { NavLink } from "@/types";
 
 /** Desktop "Solutions" dropdown */
 export const solutionsLinks: NavLink[] = [
-  { label: "Web & App Development", href: "/services#web" },
-  { label: "Mobile Apps", href: "/services#mobile" },
-  { label: "AI Agents & Automation", href: "/services#ai" },
-  { label: "Cloud & DevOps", href: "/services#cloud" },
-  { label: "UI / UX Design", href: "/services#design" },
+  { label: "Web Development", href: "/services/web-development" },
+  { label: "Mobile Apps", href: "/services/mobile-apps" },
+  { label: "AI Agents & Automation", href: "/services/ai-agents" },
+  { label: "Cloud & DevOps", href: "/services/cloud-devops" },
+  { label: "UI / UX Design", href: "/services/ui-ux-design" },
 ];
 
 /** Desktop "About" dropdown */
@@ -25,11 +25,12 @@ export const mainNavLinks: NavLink[] = [
 
 /** Footer — Services column */
 export const footerServicesLinks: NavLink[] = [
-  { label: "Web Development", href: "/services#web" },
-  { label: "Mobile Apps", href: "/services#mobile" },
-  { label: "AI Agents", href: "/services#ai" },
-  { label: "Automation", href: "/services#automation" },
-  { label: "Cloud & DevOps", href: "/services#cloud" },
+  { label: "Web Development", href: "/services/web-development" },
+  { label: "Mobile Apps", href: "/services/mobile-apps" },
+  { label: "AI Agents", href: "/services/ai-agents" },
+  { label: "Automation", href: "/services/automation" },
+  { label: "Cloud & DevOps", href: "/services/cloud-devops" },
+  { label: "UI / UX Design", href: "/services/ui-ux-design" },
 ];
 
 /** Footer — Company column */

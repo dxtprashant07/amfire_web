@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, CheckCircle2 } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Finance & Fintech",
@@ -242,7 +241,6 @@ export default function FintechPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }
