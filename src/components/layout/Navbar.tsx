@@ -32,7 +32,8 @@ const aboutLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, clearAuth } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);

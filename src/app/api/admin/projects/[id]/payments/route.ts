@@ -49,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
     }).catch(() => {});
 
-    return NextResponse.json({ payment }, { status: 201 });
+    return NextResponse.json({ payment: { ...payment, amount: payment.amount?.toString() ?? "0" } }, { status: 201 });
   } catch (err) {
     console.error("[payments] Create failed:", err);
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 });
@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     }).catch(() => {});
 
-    return NextResponse.json({ payment });
+    return NextResponse.json({ payment: { ...payment, amount: payment.amount?.toString() ?? "0" } });
   } catch (err) {
     const message = (err as Error).message || "";
     if (message.includes("Record to update not found") || message.includes("NotFound")) {

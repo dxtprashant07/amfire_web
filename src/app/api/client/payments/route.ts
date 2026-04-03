@@ -6,11 +6,21 @@ export async function GET(req: NextRequest) {
   const auth = await requireAuth(req, ["CLIENT"]);
   if ("error" in auth) return auth.error;
 
-  const payments = await prisma.payment.findMany({
-    where: { project: { clientId: auth.payload.sub } },
-    include: { project: { select: { name: true } } },
-    orderBy: { createdAt: "asc" },
-  });
+  try {
+    const payments = await prisma.payment.findMany({
+      where: { project: { clientId: auth.payload.sub } },
+      include: { project: { select: { name: true } } },
+      orderBy: { createdAt: "asc" },
+    });
 
-  return NextResponse.json({ payments });
+    const safe = payments.map((p) => ({
+      ...p,
+      amount: p.amount?.toString() ?? "0",
+    }));
+
+    return NextResponse.json({ payments: safe });
+  } catch (err) {
+    console.error("[client/payments] GET error:", err);
+    return NextResponse.json({ error: "Failed to fetch payments." }, { status: 500 });
+  }
 }
