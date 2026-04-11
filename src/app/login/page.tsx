@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, AlertCircle, Eye, EyeOff, LogIn } from "lucide-react";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

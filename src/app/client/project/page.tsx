@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { authFetch } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CheckCircle2, Clock, Circle, Mail, Phone, AlertCircle, ChevronDown } from "lucide-react";
 

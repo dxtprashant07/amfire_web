@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { authFetch } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { FileText, Download, File, Image, FileCode, AlertCircle } from "lucide-react";
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { newsletterSchema } from "@/lib/validations";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/db/client";
 
 /* ── Simple in-memory rate limiter ─────────────────────────────────── */
 const rateLimit = new Map<string, { count: number; reset: number }>();

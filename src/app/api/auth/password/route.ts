@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { requireAuth } from "@/lib/api-auth";
-import { prisma } from "@/lib/db";
+import { requireAuth } from "@/services/auth/api-auth";
+import { prisma } from "@/db/client";
 import { changePasswordSchema } from "@/lib/validations";
 
 /** PATCH /api/auth/password — change own password */

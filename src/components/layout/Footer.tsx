@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, ArrowUpRight } from "lucide-react";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
-import { footerServicesLinks, footerCompanyLinks } from "@/constants/navigation";
+import { footerServicesLinks, footerCompanyLinks } from "@/config/navigation";
 
 function IconTwitter() {
   return (

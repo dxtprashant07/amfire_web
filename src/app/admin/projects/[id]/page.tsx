@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { authFetch } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
 import {
   ArrowLeft, CheckCircle2, Clock, Plus, Trash2, AlertCircle,
   FileText, CreditCard, Upload, Download, Save,

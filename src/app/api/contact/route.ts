@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { contactSchema } from "@/lib/validations";
-import { createZohoLead, isZohoConfigured } from "@/lib/zoho";
-import { prisma } from "@/lib/db";
+import { createZohoLead, isZohoConfigured } from "@/services/integrations/zoho";
+import { prisma } from "@/db/client";
 
 /* ── Simple in-memory rate limiter (per IP, resets on server restart) ─ */
 const rateLimit = new Map<string, { count: number; reset: number }>();

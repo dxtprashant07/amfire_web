@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { authFetch } from "@/lib/stores/auth-store";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   FolderKanban,

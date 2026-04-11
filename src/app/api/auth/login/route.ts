@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/db/client";
 import { loginSchema } from "@/lib/validations";
 import {
   createAccessToken,
@@ -8,7 +8,7 @@ import {
   setRefreshCookie,
   MAX_FAILED_ATTEMPTS,
   LOCKOUT_DURATION_MS,
-} from "@/lib/auth";
+} from "@/services/auth/auth";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {

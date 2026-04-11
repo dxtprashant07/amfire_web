@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/db/client";
 import { z } from "zod";
 
 const schema = z.object({ email: z.string().email() });

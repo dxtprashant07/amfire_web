@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-import { testimonials } from "@/data/home";
+import { testimonials } from "@/config/home";
 
 function TestimonialCard({ t }: { t: (typeof testimonials)[0] }) {
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { authFetch } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
 import { UserPlus, Shield, User as UserIcon, Building2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface UserRow {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/api-auth";
-import { prisma } from "@/lib/db";
+import { requireAuth } from "@/services/auth/api-auth";
+import { prisma } from "@/db/client";
 import { createProjectSchema, updateProjectSchema } from "@/lib/validations";
 
 const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];

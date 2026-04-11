@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { authFetch } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Save, Plus, Trash2 } from "lucide-react";
 

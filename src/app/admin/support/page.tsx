@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { authFetch } from "@/lib/stores/auth-store";
+import { authFetch } from "@/stores/auth-store";
 import {
   HeadphonesIcon, AlertCircle, CheckCircle2, Clock, XCircle,
   MessageSquare, User as UserIcon,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAccessToken, type TokenPayload } from "@/lib/auth";
+import { verifyAccessToken, type TokenPayload } from "@/services/auth/auth";
 
 /** Extract and verify the Bearer token from a request. Returns payload or error response. */
 export async function requireAuth(

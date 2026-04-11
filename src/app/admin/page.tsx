@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAuthStore, authFetch } from "@/lib/stores/auth-store";
+import { useAuthStore, authFetch } from "@/stores/auth-store";
 import {
   Users, FileEdit, Settings, ExternalLink, BarChart3,
   FolderKanban, CreditCard, ArrowRight, Inbox, Headphones, TrendingUp,

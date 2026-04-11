@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/db/client";
 import {
   verifyRefreshToken,
   createAccessToken,
   createRefreshToken,
   setRefreshCookie,
   getRefreshCookie,
-} from "@/lib/auth";
+} from "@/services/auth/auth";
 
 export async function POST() {
   const token = await getRefreshCookie();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { requireAuth } from "@/lib/api-auth";
+import { prisma } from "@/db/client";
+import { requireAuth } from "@/services/auth/api-auth";
 import { feedbackSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest) {

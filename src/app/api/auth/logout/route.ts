@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { prisma } from "@/lib/db";
-import { clearRefreshCookie, getRefreshCookie, verifyRefreshToken } from "@/lib/auth";
+import { prisma } from "@/db/client";
+import { clearRefreshCookie, getRefreshCookie, verifyRefreshToken } from "@/services/auth/auth";
 
 export async function POST(req: NextRequest) {
   const token = await getRefreshCookie();

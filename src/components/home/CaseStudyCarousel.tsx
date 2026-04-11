@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { caseStudies } from "@/data/home";
+import { caseStudies } from "@/config/home";
 
 export function CaseStudyCarousel() {
   const [current, setCurrent] = useState(0);

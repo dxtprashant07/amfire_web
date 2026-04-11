@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, Sun, Moon, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 const solutionsLinks = [
   { label: "Services Overview", href: "/services" },

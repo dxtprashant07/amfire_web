@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { stats, services, processSteps } from "@/data/home";
+import { stats, services, processSteps } from "@/config/home";
 
 // Real tech tags from the services we offer
 const techTags = ["Next.js", "FastAPI", "GPT-4o", "AWS", "React Native", "PostgreSQL"];

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
