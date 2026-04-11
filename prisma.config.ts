@@ -13,6 +13,9 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations prefer DIRECT_URL (direct 5432 connection that supports the
+    // shadow database + schema introspection). Falls back to DATABASE_URL for
+    // envs where only one connection string is available.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
