@@ -1,11 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, Sun, Moon, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
+
+// Theme is stored in the DOM (`<html class="dark">`). Components read it via
+// useSyncExternalStore so React can track it without setState-in-effect.
+const themeListeners = new Set<() => void>();
+const subscribeTheme = (cb: () => void) => {
+  themeListeners.add(cb);
+  return () => themeListeners.delete(cb);
+};
+const getTheme = () => (document.documentElement.classList.contains("dark") ? "dark" : "light");
+const getServerTheme = () => "light" as const;
+const notifyTheme = () => themeListeners.forEach((cb) => cb());
 
 const solutionsLinks = [
   { label: "Services Overview", href: "/services" },
@@ -44,7 +55,18 @@ export function Navbar() {
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [mobileWorkOpen, setMobileWorkOpen] = useState(false);
   const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
+  const isDark = theme === "dark";
+  const [lastPathname, setLastPathname] = useState(pathname);
+
+  // Reset menu state on route change (during render — avoids a cascading effect).
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setMobileOpen(false);
+    setSolutionsOpen(false);
+    setWorkOpen(false);
+    setAboutOpen(false);
+  }
   const solutionsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const workTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const aboutTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -54,7 +76,6 @@ export function Navbar() {
   const aboutRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
     return () => {
       clearTimeout(solutionsTimer.current);
       clearTimeout(workTimer.current);
@@ -64,9 +85,9 @@ export function Navbar() {
 
   const toggleTheme = () => {
     const next = !isDark;
-    setIsDark(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
+    notifyTheme();
   };
 
   useEffect(() => {
@@ -95,13 +116,6 @@ export function Navbar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-    setSolutionsOpen(false);
-    setWorkOpen(false);
-    setAboutOpen(false);
-  }, [pathname]);
 
   const isActive = (hrefs: string[]) => hrefs.some((h) => pathname === h || pathname.startsWith(h + "/"));
 

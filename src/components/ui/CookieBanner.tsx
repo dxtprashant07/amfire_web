@@ -1,25 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
-export function CookieBanner() {
-  const [visible, setVisible] = useState(false);
+// Subscribes to nothing — we just need React to skip this value during SSR
+// and read it once on the client, without calling setState inside an effect.
+const subscribe = () => () => {};
+const getConsent = () => localStorage.getItem("amfire_cookie_consent");
+const getServerConsent = () => null;
 
-  useEffect(() => {
-    const consent = localStorage.getItem("amfire_cookie_consent");
-    if (!consent) setVisible(true);
-  }, []);
+export function CookieBanner() {
+  const consent = useSyncExternalStore(subscribe, getConsent, getServerConsent);
+  const [dismissed, setDismissed] = useState(false);
+  const visible = consent === null && !dismissed;
 
   const accept = () => {
     localStorage.setItem("amfire_cookie_consent", JSON.stringify({ accepted: true, analytics: true, marketing: false, timestamp: Date.now() }));
-    setVisible(false);
+    setDismissed(true);
   };
 
   const decline = () => {
     localStorage.setItem("amfire_cookie_consent", JSON.stringify({ accepted: false, analytics: false, marketing: false, timestamp: Date.now() }));
-    setVisible(false);
+    setDismissed(true);
   };
 
   if (!visible) return null;

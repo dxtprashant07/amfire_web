@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import type { Role } from "@/generated/prisma/client";
+import type { Role } from "@prisma/client";
 
 function getSecret(envVar: string, label: string): Uint8Array {
   const val = process.env[envVar];
