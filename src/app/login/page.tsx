@@ -50,15 +50,34 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      // Parse response body defensively — a 500 may return HTML, not JSON.
+      const contentType = res.headers.get("content-type") ?? "";
+      let data: { error?: string; user?: { role: string }; accessToken?: string } = {};
+      if (contentType.includes("application/json")) {
+        try {
+          data = await res.json();
+        } catch {
+          /* fall through to status-based error below */
+        }
+      }
 
       if (!res.ok) {
-        setErrors({ form: data.error || "Login failed." });
+        setErrors({
+          form:
+            data.error ||
+            `Login failed (HTTP ${res.status}). The server may be misconfigured.`,
+        });
         setSubmitting(false);
         return;
       }
 
-      setAuth(data.user, data.accessToken);
+      if (!data.user || !data.accessToken) {
+        setErrors({ form: "Unexpected response from server. Please try again." });
+        setSubmitting(false);
+        return;
+      }
+
+      setAuth(data.user as Parameters<typeof setAuth>[0], data.accessToken);
 
       // Redirect based on role
       if (["SUPER_ADMIN", "ADMIN"].includes(data.user.role)) {
@@ -66,8 +85,9 @@ export default function LoginPage() {
       } else {
         router.replace("/client");
       }
-    } catch {
-      setErrors({ form: "Network error. Try again." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
+      setErrors({ form: `${msg}. Please try again.` });
       setSubmitting(false);
     }
   }
