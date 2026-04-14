@@ -44,7 +44,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-3 pt-0.5">
               <a href="https://twitter.com/amfire_in" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors"><IconTwitter /></a>
-              <a href="https://linkedin.com/company/amfire" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors"><IconLinkedin /></a>
+              <a href="https://linkedin.com/company/amfire-ai" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors"><IconLinkedin /></a>
               <a href="https://github.com/amfire-in" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-muted-foreground hover:text-primary transition-colors"><IconGithub /></a>
             </div>
           </div>

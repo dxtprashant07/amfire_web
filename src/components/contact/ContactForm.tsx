@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import {
-  Globe, Smartphone, Brain, Zap, Layers,
+  Globe, Smartphone, Brain, Zap, Layers, Wrench, HelpCircle,
   CheckCircle, ArrowRight, ArrowLeft, Send,
 } from "lucide-react";
 
 /* ── Step data ────────────────────────────────────────────────────────── */
+
+const OTHER_VALUE = "other";
 
 const buildOptions = [
   { value: "web-app", label: "Web App", icon: Globe },
@@ -14,13 +16,15 @@ const buildOptions = [
   { value: "ai-agent", label: "AI Agent", icon: Brain },
   { value: "automation", label: "Automation", icon: Zap },
   { value: "full-product", label: "Full Product", icon: Layers },
+  { value: "it-service", label: "IT Service", icon: Wrench },
+  { value: OTHER_VALUE, label: "Other", icon: HelpCircle },
 ];
 
 const budgetOptions = [
-  { value: "under-1l", label: "Under ₹1L" },
-  { value: "1l-3l", label: "₹1L – ₹3L" },
-  { value: "3l-10l", label: "₹3L – ₹10L" },
-  { value: "10l-plus", label: "₹10L+" },
+  { value: "starter-20k", label: "Starter · ₹20K" },
+  { value: "growth-50k", label: "Growth · ₹50K" },
+  { value: "scale-75k", label: "Scale · ₹75K" },
+  { value: "enterprise-1l", label: "Enterprise · ₹1L+" },
 ];
 
 const timelineOptions = [
@@ -33,7 +37,8 @@ const timelineOptions = [
 /* ── Types ────────────────────────────────────────────────────────────── */
 
 interface FormData {
-  buildType: string;
+  buildType: string[];
+  customRequirement: string;
   budget: string;
   timeline: string;
   name: string;
@@ -103,7 +108,8 @@ export function ContactForm() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState<FormData>({
-    buildType: "",
+    buildType: [],
+    customRequirement: "",
     budget: "",
     timeline: "",
     name: "",
@@ -116,8 +122,22 @@ export function ContactForm() {
   const set = (key: keyof FormData, value: string) =>
     setFormData((d) => ({ ...d, [key]: value }));
 
+  const toggleBuildType = (value: string) =>
+    setFormData((d) => ({
+      ...d,
+      buildType: d.buildType.includes(value)
+        ? d.buildType.filter((v) => v !== value)
+        : [...d.buildType, value],
+    }));
+
+  const otherSelected = formData.buildType.includes(OTHER_VALUE);
+
   const canNext = () => {
-    if (step === 0) return !!formData.buildType;
+    if (step === 0) {
+      if (formData.buildType.length === 0) return false;
+      if (otherSelected && formData.customRequirement.trim().length < 5) return false;
+      return true;
+    }
     if (step === 1) return !!formData.budget;
     if (step === 2) return !!formData.timeline;
     return true;
@@ -144,10 +164,25 @@ export function ContactForm() {
     setFormError("");
 
     try {
+      const selectedLabels = buildOptions
+        .filter((o) => formData.buildType.includes(o.value))
+        .map((o) => o.label);
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        budget: formData.budget,
+        timeline: formData.timeline,
+        service: selectedLabels.join(", "),
+        message: otherSelected && formData.customRequirement.trim()
+          ? `Custom requirement: ${formData.customRequirement.trim()}\n\n${formData.message}`
+          : formData.message,
+      };
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
@@ -173,7 +208,7 @@ export function ContactForm() {
           Thanks for reaching out. We'll review your project and get back to you within 48 hours with a detailed proposal.
         </p>
         <button
-          onClick={() => { setSubmitted(false); setStep(0); setFormData({ buildType: "", budget: "", timeline: "", name: "", email: "", phone: "", company: "", message: "" }); }}
+          onClick={() => { setSubmitted(false); setStep(0); setFormData({ buildType: [], customRequirement: "", budget: "", timeline: "", name: "", email: "", phone: "", company: "", message: "" }); }}
           className="mt-8 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
         >
           Send another message
@@ -190,19 +225,38 @@ export function ContactForm() {
       {step === 0 && (
         <div>
           <h3 className="text-lg font-bold text-foreground mb-1">What do you want to build?</h3>
-          <p className="text-sm text-muted-foreground mb-6">Select the type of product you have in mind.</p>
+          <p className="text-sm text-muted-foreground mb-6">Select one or more — pick everything that fits your needs.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {buildOptions.map((opt) => (
               <OptionCard
                 key={opt.value}
-                selected={formData.buildType === opt.value}
-                onClick={() => set("buildType", opt.value)}
+                selected={formData.buildType.includes(opt.value)}
+                onClick={() => toggleBuildType(opt.value)}
               >
                 <opt.icon size={22} />
                 <span>{opt.label}</span>
               </OptionCard>
             ))}
           </div>
+
+          {otherSelected && (
+            <div className="mt-5 space-y-1.5">
+              <label htmlFor="customRequirement" className="block text-sm font-medium text-foreground">
+                Tell us what you need <span className="text-primary">*</span>
+              </label>
+              <textarea
+                id="customRequirement"
+                rows={3}
+                placeholder="Describe your requirement — we'll recommend the right tech stack and approach."
+                value={formData.customRequirement}
+                onChange={(e) => set("customRequirement", e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-colors resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Not sure of the tech stack? Just explain the outcome you want — we'll take it from there.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

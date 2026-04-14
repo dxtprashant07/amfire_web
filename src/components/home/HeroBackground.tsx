@@ -177,9 +177,17 @@ const cards = [
 export function HeroBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      {/* ── Ambient blobs ── */}
+      {/* ── Ambient blobs (static on mobile, animated on desktop) ── */}
+      <div
+        className="absolute rounded-full md:hidden"
+        style={{
+          width: 500, height: 500,
+          top: "-20%", right: "-20%",
+          background: "radial-gradient(circle, hsl(5 77% 57% / 0.10) 0%, transparent 70%)",
+        }}
+      />
       <motion.div
-        className="absolute rounded-full"
+        className="absolute rounded-full hidden md:block"
         style={{
           width: 700, height: 700,
           top: "-25%", right: "-18%",
@@ -190,7 +198,7 @@ export function HeroBackground() {
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute rounded-full"
+        className="absolute rounded-full hidden md:block"
         style={{
           width: 450, height: 450,
           top: "30%", left: "-8%",
@@ -201,7 +209,7 @@ export function HeroBackground() {
         transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 3 }}
       />
       <motion.div
-        className="absolute rounded-full"
+        className="absolute rounded-full hidden md:block"
         style={{
           width: 380, height: 380,
           bottom: "5%", right: "15%",
