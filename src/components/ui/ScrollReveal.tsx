@@ -37,13 +37,9 @@ export function ScrollReveal({
     <motion.div
       ref={ref}
       className={className}
-      initial={{ opacity: 0, ...offset, filter: "blur(4px)" }}
-      animate={
-        isInView
-          ? { opacity: 1, x: 0, y: 0, filter: "blur(0px)" }
-          : undefined
-      }
-      transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, ...offset }}
+      animate={isInView ? { opacity: 1, x: 0, y: 0 } : undefined}
+      transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>

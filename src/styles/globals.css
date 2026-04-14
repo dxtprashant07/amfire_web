@@ -122,3 +122,12 @@ body {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
+
+/* ─── Mobile perf: drop expensive decorative blurs ────────────────── */
+@media (max-width: 767px) {
+  [aria-hidden="true"][class~="blur-[120px]"],
+  [aria-hidden="true"][class~="blur-[140px]"],
+  [aria-hidden="true"][class~="blur-[100px]"] {
+    filter: none !important;
+  }
+}
