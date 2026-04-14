@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, Sun, Moon, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -137,11 +138,17 @@ export function Navbar() {
           hidden ? "-translate-y-full" : "translate-y-0"
         )}
       >
-        <div className="container mx-auto flex items-center justify-between h-20 px-4 sm:px-6">
+        <div className="container mx-auto flex items-center justify-between h-24 px-4 sm:px-6">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold tracking-tight shrink-0">
-            <span className="text-foreground">am</span>
-            <span className="gradient-text">fire</span>
+          <Link href="/" aria-label="amfire home" className="shrink-0 inline-flex items-center">
+            <Image
+              src="/logo.png"
+              alt="amfire"
+              width={320}
+              height={120}
+              priority
+              className="h-20 md:h-28 w-auto"
+            />
           </Link>
 
           {/* Desktop nav */}
