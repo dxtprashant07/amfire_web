@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { authFetch } from "@/stores/auth-store";
-import { UserPlus, Shield, User as UserIcon, Building2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { UserPlus, Shield, User as UserIcon, Building2, AlertCircle, CheckCircle2, KeyRound, X } from "lucide-react";
 
 interface UserRow {
   id: string;
@@ -36,6 +36,12 @@ export default function AdminUsersPage() {
     company: "",
     phone: "",
   });
+
+  // Reset-password modal state
+  const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetError, setResetError] = useState("");
 
   async function fetchUsers() {
     setLoading(true);
@@ -73,6 +79,37 @@ export default function AdminUsersPage() {
       setError(typeof data.error === "string" ? data.error : "Failed to create user");
     }
     setSubmitting(false);
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    setResetError("");
+    setResetSubmitting(true);
+
+    const res = await authFetch(`/api/admin/users/${resetTarget.id}/password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: resetPassword }),
+    });
+
+    if (res.ok) {
+      setSuccess(`Password reset for ${resetTarget.email}. Share the new password with them securely.`);
+      setResetTarget(null);
+      setResetPassword("");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      const err = data?.error;
+      if (typeof err === "string") {
+        setResetError(err);
+      } else if (err && typeof err === "object") {
+        const first = Object.values(err).flat()[0];
+        setResetError(typeof first === "string" ? first : "Failed to reset password");
+      } else {
+        setResetError("Failed to reset password");
+      }
+    }
+    setResetSubmitting(false);
   }
 
   const roleBadge = (role: string) => {
@@ -233,6 +270,7 @@ export default function AdminUsersPage() {
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Company</th>
                   <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Joined</th>
+                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -256,10 +294,106 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
+                    <td className="px-4 py-3 text-right">
+                      {u.role !== "SUPER_ADMIN" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResetTarget(u);
+                            setResetPassword("");
+                            setResetError("");
+                            setError("");
+                            setSuccess("");
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                          title="Reset password"
+                        >
+                          <KeyRound size={12} /> Reset
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !resetSubmitting && setResetTarget(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <KeyRound size={18} className="text-primary" /> Reset Password
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  for <span className="font-medium text-foreground">{resetTarget.email}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResetTarget(null)}
+                disabled={resetSubmitting}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  New Password *
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  minLength={8}
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 font-mono"
+                  placeholder="Min 8 chars, 1 uppercase, 1 lowercase, 1 number"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Must contain: 8+ characters, uppercase, lowercase, and a number. The user&apos;s existing sessions will be revoked and they&apos;ll need to log in again.
+                </p>
+              </div>
+
+              {resetError && (
+                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs">
+                  <AlertCircle size={14} /> {resetError}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={resetSubmitting || !resetPassword}
+                  className="px-4 py-2 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all"
+                >
+                  {resetSubmitting ? "Resetting..." : "Reset Password"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResetTarget(null)}
+                  disabled={resetSubmitting}
+                  className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -109,3 +109,48 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Failed to update payment" }, { status: 500 });
   }
 }
+
+/** DELETE — remove a payment (pass paymentId in body) */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAuth(req, ADMIN_ROLES);
+  if ("error" in auth) return auth.error;
+
+  const { id: projectId } = await params;
+
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const { paymentId } = body as Record<string, unknown>;
+  if (!paymentId || typeof paymentId !== "string") {
+    return NextResponse.json({ error: "paymentId required" }, { status: 400 });
+  }
+
+  try {
+    const existing = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      select: { id: true, projectId: true, label: true },
+    });
+    if (!existing || existing.projectId !== projectId) {
+      return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+    }
+
+    await prisma.payment.delete({ where: { id: paymentId } });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: auth.payload.sub,
+        action: "DELETE",
+        entity: "payment",
+        entityId: paymentId,
+        details: `Deleted payment "${existing.label}" from project ${projectId}`,
+      },
+    }).catch(() => {});
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[payments] Delete failed:", err);
+    return NextResponse.json({ error: "Failed to delete payment" }, { status: 500 });
+  }
+}

@@ -152,6 +152,22 @@ export default function AdminProjectDetailPage() {
     fetchProject();
   }
 
+  // Delete payment
+  async function deletePayment(paymentId: string, label: string) {
+    if (!confirm(`Delete payment "${label}"? This cannot be undone.`)) return;
+    const res = await authFetch(`/api/admin/projects/${id}/payments`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentId }),
+    });
+    if (res.ok) {
+      flash("success", "Payment deleted");
+      fetchProject();
+    } else {
+      flash("error", "Failed to delete payment");
+    }
+  }
+
   // Add document
   async function handleAddDoc(e: React.FormEvent) {
     e.preventDefault();
@@ -390,6 +406,15 @@ export default function AdminProjectDetailPage() {
                 >
                   {PAY_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
+                <button
+                  type="button"
+                  onClick={() => deletePayment(p.id, p.label)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors"
+                  title="Delete payment"
+                  aria-label={`Delete payment ${p.label}`}
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>

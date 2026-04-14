@@ -48,3 +48,4 @@ AGENTS.md
 skill.md
 
 /src/generated/prisma
+.env*.local
