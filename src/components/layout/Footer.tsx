@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, ArrowUpRight } from "lucide-react";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import { footerServicesLinks, footerCompanyLinks } from "@/config/navigation";
@@ -35,9 +36,14 @@ export function Footer() {
 
           {/* Brand — full row on mobile */}
           <div className="col-span-2 md:col-span-1 space-y-3 md:space-y-4">
-            <Link href="/" className="text-xl md:text-2xl font-bold tracking-tight inline-block">
-              <span className="text-foreground">am</span>
-              <span className="gradient-text">fire</span>
+            <Link href="/" aria-label="amfire home" className="inline-flex items-center">
+              <Image
+                src="/logo.png"
+                alt="amfire"
+                width={200}
+                height={60}
+                className="h-10 md:h-12 w-auto"
+              />
             </Link>
             <p className="text-muted-foreground text-xs md:text-sm leading-relaxed max-w-xs">
               AI-First Digital Solutions. Complete software, real intelligence.

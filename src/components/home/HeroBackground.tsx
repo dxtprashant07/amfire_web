@@ -1,7 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { stats, services, processSteps } from "@/config/home";
+
+// Apple-style cubic-bezier — natural deceleration used throughout iOS / apple.com
+const APPLE_EASE = [0.22, 0.61, 0.36, 1] as const;
 
 // Real tech tags from the services we offer
 const techTags = ["Next.js", "FastAPI", "GPT-4o", "AWS", "React Native", "PostgreSQL"];
@@ -18,7 +21,7 @@ const cards = [
   // ── Column 0 (leftmost) ──
   {
     x: 0, y: 0,
-    float: { y: [0, -10, 0], duration: 7 },
+    float: { y: [0, -8], duration: 14 },
     content: (
       <div className="space-y-2.5">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider">By the numbers</div>
@@ -35,7 +38,7 @@ const cards = [
   },
   {
     x: 0, y: 200,
-    float: { y: [0, 9, 0], duration: 9 },
+    float: { y: [0, 7], duration: 16 },
     content: (
       <div className="space-y-2">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider mb-2">Recent Work</div>
@@ -53,7 +56,7 @@ const cards = [
   // ── Column 1 (middle) ──
   {
     x: 192, y: 50,
-    float: { y: [0, -8, 4, 0], duration: 8 },
+    float: { y: [0, -6], duration: 15 },
     content: (
       <div className="space-y-2.5">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider">What We Build</div>
@@ -72,7 +75,7 @@ const cards = [
   },
   {
     x: 192, y: 246,
-    float: { y: [0, 11, 0], duration: 10 },
+    float: { y: [0, 9], duration: 18 },
     content: (
       <div className="space-y-2">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider mb-2">Our Process</div>
@@ -90,7 +93,7 @@ const cards = [
   },
   {
     x: 192, y: 430,
-    float: { y: [0, -7, 0], duration: 6 },
+    float: { y: [0, -5], duration: 13 },
     content: (
       <div className="space-y-2">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider mb-1">AI Assistant</div>
@@ -113,7 +116,7 @@ const cards = [
   // ── Column 2 (rightmost) ──
   {
     x: 382, y: 20,
-    float: { y: [0, -12, 0], duration: 9 },
+    float: { y: [0, -10], duration: 17 },
     content: (
       <div className="space-y-2.5">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider">Tech Stack</div>
@@ -127,7 +130,7 @@ const cards = [
   },
   {
     x: 382, y: 194,
-    float: { y: [0, 8, -4, 0], duration: 8 },
+    float: { y: [0, 7], duration: 16 },
     content: (
       <div className="space-y-2.5">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider">Mobile App</div>
@@ -149,7 +152,7 @@ const cards = [
   },
   {
     x: 382, y: 375,
-    float: { y: [0, -9, 3, 0], duration: 11 },
+    float: { y: [0, -8], duration: 19 },
     content: (
       <div className="space-y-2">
         <div className="text-[9px] font-semibold text-foreground/60 uppercase tracking-wider mb-2">Delivery Phases</div>
@@ -175,6 +178,7 @@ const cards = [
 ];
 
 export function HeroBackground() {
+  const prefersReducedMotion = useReducedMotion();
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       {/* ── Ambient blobs (static on mobile, animated on desktop) ── */}
@@ -186,6 +190,7 @@ export function HeroBackground() {
           background: "radial-gradient(circle, hsl(5 77% 57% / 0.10) 0%, transparent 70%)",
         }}
       />
+      {/* Blobs: translate-only (GPU-free). Scale causes re-blur every frame — avoided. */}
       <motion.div
         className="absolute rounded-full hidden md:block"
         style={{
@@ -193,9 +198,10 @@ export function HeroBackground() {
           top: "-25%", right: "-18%",
           background: "radial-gradient(circle, hsl(5 77% 57% / 0.10) 0%, transparent 70%)",
           filter: "blur(80px)",
+          willChange: "transform",
         }}
-        animate={{ scale: [1, 1.12, 0.94, 1], x: [0, 40, -20, 0], y: [0, -30, 25, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        animate={prefersReducedMotion ? undefined : { x: [0, 30, 0], y: [0, -20, 0] }}
+        transition={{ duration: 24, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
       />
       <motion.div
         className="absolute rounded-full hidden md:block"
@@ -204,9 +210,10 @@ export function HeroBackground() {
           top: "30%", left: "-8%",
           background: "radial-gradient(circle, hsl(25 87% 58% / 0.07) 0%, transparent 70%)",
           filter: "blur(90px)",
+          willChange: "transform",
         }}
-        animate={{ scale: [1, 1.2, 0.9, 1], x: [0, 30, -15, 0], y: [0, 40, -25, 0] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        animate={prefersReducedMotion ? undefined : { x: [0, 25, 0], y: [0, 30, 0] }}
+        transition={{ duration: 28, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 2 }}
       />
       <motion.div
         className="absolute rounded-full hidden md:block"
@@ -215,40 +222,67 @@ export function HeroBackground() {
           bottom: "5%", right: "15%",
           background: "radial-gradient(circle, hsl(217 91% 60% / 0.05) 0%, transparent 70%)",
           filter: "blur(100px)",
+          willChange: "transform",
         }}
-        animate={{ scale: [1, 1.15, 0.92, 1], x: [0, -25, 15, 0], y: [0, -20, 30, 0] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 6 }}
+        animate={prefersReducedMotion ? undefined : { x: [0, -20, 0], y: [0, 20, 0] }}
+        transition={{ duration: 22, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 5 }}
       />
 
-      {/* ── Floating cards — desktop only ── */}
+      {/* ── Floating cards — desktop only ──
+          Single-gradient mask (cheap) instead of two composited masks.
+          Cards use opaque bg (no backdrop-blur per card — would re-blur every frame).
+          Every animated element has willChange+translateZ to stay on GPU. */}
       <div className="absolute inset-0 hidden lg:block">
         <div
           className="absolute inset-0"
           style={{
             maskImage:
-              "linear-gradient(to right, transparent 0%, transparent 35%, rgba(0,0,0,0.3) 46%, rgba(0,0,0,0.8) 58%, black 70%), " +
-              "linear-gradient(to bottom, transparent 0%, black 10%, black 88%, transparent 100%)",
+              "linear-gradient(to right, transparent 38%, black 68%)",
             WebkitMaskImage:
-              "linear-gradient(to right, transparent 0%, transparent 35%, rgba(0,0,0,0.3) 46%, rgba(0,0,0,0.8) 58%, black 70%), " +
-              "linear-gradient(to bottom, transparent 0%, black 10%, black 88%, transparent 100%)",
-            maskComposite: "intersect",
-            WebkitMaskComposite: "destination-in",
+              "linear-gradient(to right, transparent 38%, black 68%)",
           }}
         >
           <div className="absolute right-8 top-0 bottom-0" style={{ width: 574 }}>
             {cards.map((card, idx) => (
+              // Outer: spring entrance (opacity + slide up). GPU-promoted.
               <motion.div
                 key={idx}
-                className="absolute rounded-2xl border border-border/50 bg-card/85 backdrop-blur-sm shadow-xl p-4"
-                style={{ width: 172, left: card.x, top: card.y }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: card.float.y }}
+                className="absolute"
+                style={{
+                  width: 172,
+                  left: card.x,
+                  top: card.y,
+                  willChange: "transform, opacity",
+                  transform: "translateZ(0)",
+                }}
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{
-                  opacity: { duration: 0.6, delay: idx * 0.12 },
-                  y: { duration: card.float.duration, repeat: Infinity, ease: "easeInOut", delay: idx * 0.3 },
+                  opacity: { duration: 0.7, delay: 0.25 + idx * 0.07, ease: APPLE_EASE },
+                  y: { duration: 0.9, delay: 0.25 + idx * 0.07, ease: APPLE_EASE },
                 }}
               >
-                {card.content}
+                {/* Inner: continuous gentle float. Mirror = smooth reverse, no snap. */}
+                <motion.div
+                  className="rounded-2xl border border-border/50 bg-card shadow-xl p-4"
+                  style={{
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                    backfaceVisibility: "hidden",
+                  }}
+                  animate={prefersReducedMotion ? undefined : { y: card.float.y }}
+                  transition={{
+                    y: {
+                      duration: card.float.duration,
+                      repeat: Infinity,
+                      repeatType: "mirror",
+                      ease: "easeInOut",
+                      delay: idx * 0.6,
+                    },
+                  }}
+                >
+                  {card.content}
+                </motion.div>
               </motion.div>
             ))}
           </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Lock, AlertCircle, Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -97,9 +98,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm mx-auto px-4">
         {/* Branding */}
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold tracking-tight">
-            <span className="text-foreground">am</span>
-            <span className="gradient-text">fire</span>
+          <Link href="/" aria-label="amfire home" className="inline-flex items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="amfire"
+              width={160}
+              height={48}
+              priority
+              className="h-10 w-auto"
+            />
           </Link>
           <p className="text-sm text-muted-foreground mt-2">
             Sign in to your account
