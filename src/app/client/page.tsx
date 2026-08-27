@@ -11,7 +11,6 @@ import {
   FileText,
   ArrowRight,
   CheckCircle2,
-  Clock,
   AlertCircle,
   Calendar,
   Mail,
@@ -73,10 +72,10 @@ export default function ClientDashboard() {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold text-foreground mb-1">
-        Welcome back, {user?.name?.split(" ")[0]}
+      <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)] mb-1.5">
+        Welcome back, <span className="gradient-text">{user?.name?.split(" ")[0]}</span>
       </h1>
-      <p className="text-sm text-muted-foreground mb-8">
+      <p className="text-[15px] text-[var(--fg-muted)] mb-7">
         Here&apos;s your project overview.
       </p>
 
@@ -148,34 +147,34 @@ export default function ClientDashboard() {
 
           {/* Stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="p-5 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg gradient-bg flex items-center justify-center">
-                  <FolderKanban size={18} className="text-white" />
-                </div>
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Progress</span>
+            <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-[22px] shadow-[var(--shadow-sm)]">
+              <div className="mb-4 flex items-start justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Progress</span>
+                <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-[var(--accent-tint)] text-[var(--color-orange)]">
+                  <FolderKanban size={17} />
+                </span>
               </div>
-              <p className="text-lg font-bold text-foreground">{progressPercent}%</p>
+              <p className="text-[30px] font-extrabold leading-none tracking-[-0.02em] text-[var(--fg-default)]">{progressPercent}%</p>
             </div>
 
-            <div className="p-5 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg gradient-bg flex items-center justify-center">
-                  <CheckCircle2 size={18} className="text-white" />
-                </div>
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Milestones</span>
+            <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-[22px] shadow-[var(--shadow-sm)]">
+              <div className="mb-4 flex items-start justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Milestones</span>
+                <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-[var(--accent-tint)] text-[var(--color-orange)]">
+                  <CheckCircle2 size={17} />
+                </span>
               </div>
-              <p className="text-lg font-bold text-foreground">{completedMilestones} / {totalMilestones}</p>
+              <p className="text-[30px] font-extrabold leading-none tracking-[-0.02em] text-[var(--fg-default)]">{completedMilestones} <span className="text-base font-semibold text-[var(--fg-muted)]">/ {totalMilestones}</span></p>
             </div>
 
-            <div className="p-5 rounded-xl border border-border bg-card">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg gradient-bg flex items-center justify-center">
-                  <CreditCard size={18} className="text-white" />
-                </div>
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Payments</span>
+            <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-[22px] shadow-[var(--shadow-sm)]">
+              <div className="mb-4 flex items-start justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Payments</span>
+                <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-[var(--accent-tint)] text-[var(--color-orange)]">
+                  <CreditCard size={17} />
+                </span>
               </div>
-              <p className="text-lg font-bold text-foreground">{paidPayments} / {totalPayments} paid</p>
+              <p className="text-[30px] font-extrabold leading-none tracking-[-0.02em] text-[var(--fg-default)]">{paidPayments} <span className="text-base font-semibold text-[var(--fg-muted)]">/ {totalPayments} paid</span></p>
             </div>
           </div>
 
@@ -195,31 +194,43 @@ export default function ClientDashboard() {
             </div>
 
             {/* Milestone list with actual titles */}
-            <div className="space-y-2.5">
+            <div>
               {project.milestones
                 .sort((a, b) => a.order - b.order)
-                .map((m) => (
-                  <div key={m.id} className="flex items-center gap-3 text-sm">
-                    {m.status === "COMPLETED" ? (
-                      <CheckCircle2 size={16} className="text-green-500 shrink-0" />
-                    ) : m.status === "IN_PROGRESS" ? (
-                      <Clock size={16} className="text-primary shrink-0" />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-border shrink-0" />
-                    )}
-                    <span className={m.status === "COMPLETED" ? "text-muted-foreground line-through" : "text-foreground"}>
-                      {m.title}
+                .map((m, i) => (
+                  <div key={m.id} className="flex items-start gap-4 border-b border-[var(--border-subtle)] py-3.5 last:border-b-0">
+                    <span
+                      className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full text-[12px] font-bold ${
+                        m.status === "COMPLETED"
+                          ? "gradient-bg text-white shadow-[var(--shadow-glow-sm)]"
+                          : m.status === "IN_PROGRESS"
+                          ? "border-2 border-[var(--color-orange)] bg-[var(--accent-tint)] text-[var(--color-orange)]"
+                          : "border border-[var(--border-default)] bg-[var(--surface-sunken)] text-[var(--fg-muted)]"
+                      }`}
+                    >
+                      {m.status === "COMPLETED" ? <CheckCircle2 size={14} /> : i + 1}
                     </span>
-                    {m.dueDate && m.status !== "COMPLETED" && (
-                      <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
-                        <Calendar size={12} /> {new Date(m.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                      </span>
-                    )}
-                    {m.completedAt && m.status === "COMPLETED" && (
-                      <span className="text-xs text-green-600 ml-auto">
-                        {new Date(m.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                      </span>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <b className={`text-sm font-bold ${m.status === "COMPLETED" ? "text-[var(--fg-muted)] line-through" : "text-[var(--fg-default)]"}`}>
+                          {m.title}
+                        </b>
+                        {m.status === "COMPLETED" && m.completedAt ? (
+                          <span className="shrink-0 rounded-full bg-[var(--color-success-bg)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--color-success)]">
+                            Done · {new Date(m.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                          </span>
+                        ) : m.status === "IN_PROGRESS" ? (
+                          <span className="shrink-0 rounded-full bg-[var(--accent-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--color-orange)]">In progress</span>
+                        ) : (
+                          <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--fg-muted)]">Upcoming</span>
+                        )}
+                      </div>
+                      {m.dueDate && m.status !== "COMPLETED" ? (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-[var(--fg-muted)]">
+                          <Calendar size={12} /> Due {new Date(m.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
             </div>

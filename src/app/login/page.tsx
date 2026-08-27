@@ -94,16 +94,16 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="min-h-[calc(100vh-5rem)] flex items-center justify-center py-16">
+    <section className="min-h-screen flex items-center justify-center py-16">
       <div className="w-full max-w-sm mx-auto px-4">
         {/* Branding */}
         <div className="text-center mb-8">
           <Link href="/" aria-label="amfire home" className="inline-flex items-center justify-center">
             <Image
-              src="/logo.png"
+              src="/logo-wordmark.png"
               alt="amfire"
-              width={160}
-              height={48}
+              width={926}
+              height={245}
               priority
               className="h-10 w-auto"
             />
