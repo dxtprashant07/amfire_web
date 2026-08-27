@@ -14,6 +14,7 @@ import {
   XCircle,
   Search,
 } from "lucide-react";
+import { Panel, Chip, EmptyState } from "@/components/admin/ui";
 
 interface Client {
   id: string;
@@ -36,12 +37,18 @@ interface Project {
   payments: { status: string; amount: string }[];
 }
 
-const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string }> = {
-  DISCOVERY: { icon: Search, color: "text-blue-600", bg: "bg-blue-500/10" },
-  IN_PROGRESS: { icon: Clock, color: "text-primary", bg: "bg-primary/10" },
-  ON_HOLD: { icon: Pause, color: "text-yellow-600", bg: "bg-yellow-500/10" },
-  COMPLETED: { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-500/10" },
-  CANCELLED: { icon: XCircle, color: "text-red-600", bg: "bg-red-500/10" },
+const statusConfig: Record<string, { icon: typeof Clock; tone: "info" | "warning" | "success" | "error" }> = {
+  DISCOVERY: { icon: Search, tone: "info" },
+  IN_PROGRESS: { icon: Clock, tone: "warning" },
+  ON_HOLD: { icon: Pause, tone: "warning" },
+  COMPLETED: { icon: CheckCircle2, tone: "success" },
+  CANCELLED: { icon: XCircle, tone: "error" },
+};
+const toneIconBg: Record<string, string> = {
+  info: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
+  warning: "bg-[var(--accent-tint)] text-[var(--color-orange)]",
+  success: "bg-[var(--color-success-bg)] text-[var(--color-success)]",
+  error: "bg-[var(--color-error-bg)] text-[var(--color-error)]",
 };
 
 export default function AdminProjectsPage() {
@@ -116,14 +123,14 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-8">
+      <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Projects</h1>
-          <p className="text-sm text-muted-foreground">Manage client projects, milestones, payments & documents</p>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Projects</h1>
+          <p className="mt-1 text-[14.5px] text-[var(--fg-muted)]">Manage client projects, milestones, payments & documents</p>
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setError(""); setSuccess(""); }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 transition-all"
+          className="amfire-primary inline-flex items-center gap-2 rounded-[9px] px-4 py-2.5 text-sm font-bold transition-all"
         >
           <Plus size={16} /> New Project
         </button>
@@ -233,10 +240,9 @@ export default function AdminProjectsPage() {
           {[...Array(3)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-secondary animate-pulse" />)}
         </div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <FolderKanban size={40} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No projects yet. Click &quot;New Project&quot; to create one.</p>
-        </div>
+        <Panel>
+          <EmptyState icon={<FolderKanban size={32} className="text-[var(--fg-subtle)]" />} text='No projects yet. Click "New Project" to create one.' />
+        </Panel>
       ) : (
         <div className="space-y-3">
           {projects.map((p) => {
@@ -251,27 +257,25 @@ export default function AdminProjectsPage() {
               <Link
                 key={p.id}
                 href={`/admin/projects/${p.id}`}
-                className="group flex items-center gap-4 p-5 rounded-xl border border-border bg-card hover:border-primary/20 hover:shadow-sm transition-all"
+                className="group flex items-center gap-4 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] transition-all hover:border-[var(--color-orange)] hover:shadow-[var(--shadow-md)]"
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                  <Icon size={18} className={cfg.color} />
+                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-[9px] ${toneIconBg[cfg.tone]}`}>
+                  <Icon size={18} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <p className="truncate text-[13.5px] font-bold text-[var(--fg-default)] transition-colors group-hover:text-[var(--color-orange)]">
                       {p.name}
                     </p>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${cfg.bg} ${cfg.color}`}>
-                      {p.status.replace("_", " ")}
-                    </span>
+                    <Chip tone={cfg.tone}>{p.status.replace("_", " ")}</Chip>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-[var(--fg-muted)]">
                     {p.client.name} {p.client.company ? `· ${p.client.company}` : ""}
                     {total > 0 && ` · ${done}/${total} milestones`}
                     {totalAmt > 0 && ` · ₹${paid.toLocaleString("en-IN")} / ₹${totalAmt.toLocaleString("en-IN")} paid`}
                   </p>
                 </div>
-                <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                <ArrowRight size={16} className="shrink-0 text-[var(--fg-muted)] transition-colors group-hover:text-[var(--color-orange)]" />
               </Link>
             );
           })}

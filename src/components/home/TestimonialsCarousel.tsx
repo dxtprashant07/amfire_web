@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
-import { testimonials } from "@/config/home";
+import { testimonials as defaultTestimonials } from "@/config/home";
 
-function TestimonialCard({ t }: { t: (typeof testimonials)[0] }) {
+function TestimonialCard({ t }: { t: (typeof defaultTestimonials)[0] }) {
   return (
     <div className="flex flex-col p-5 sm:p-6 md:p-7 rounded-xl border border-border bg-card h-full">
       <div className="flex gap-1 mb-3 md:mb-4">
@@ -23,7 +23,7 @@ function TestimonialCard({ t }: { t: (typeof testimonials)[0] }) {
   );
 }
 
-export function TestimonialsCarousel() {
+export function TestimonialsCarousel({ testimonials = defaultTestimonials }: { testimonials?: typeof defaultTestimonials }) {
   const [current, setCurrent] = useState(0);
   const total = testimonials.length;
   const paused = useRef(false);

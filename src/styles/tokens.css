@@ -1,0 +1,262 @@
+/* ─────────────────────────────────────────────────────────────────────
+   AMFIRE DESIGN SYSTEM TOKENS
+   Complete design token definitions for light and dark modes
+   ───────────────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOTION TOKENS
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 280ms;
+  --duration-slower: 400ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COLOR TOKENS - LIGHT MODE
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Brand Fire Colors */
+  --color-red: #E23A2E;
+  --color-orange: #F97316;
+  --color-amber: #FB923C;
+
+  /* Gradients */
+  --gradient-fire: linear-gradient(92deg, var(--color-red) 0%, var(--color-orange) 55%, var(--color-amber) 100%);
+  --gradient-fire-135: linear-gradient(135deg, var(--color-red) 0%, var(--color-orange) 55%, var(--color-amber) 100%);
+  --gradient-fire-soft: linear-gradient(135deg, #FFF1E9, #FFE7DA);
+  --gradient-ember-core: radial-gradient(circle at 50% 40%, #2a1206 0%, #160a04 55%, #0b0603 100%);
+
+  /* Surfaces */
+  --surface-page: #FDFBF9;
+  --surface-card: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --surface-sunken: #FBF7F2;
+  --surface-overlay: rgba(253, 251, 249, 0.82);
+
+  /* Foreground & Text */
+  --fg-default: #14110F;
+  --fg-muted: #57534E;
+  --fg-subtle: #78716C;
+  --fg-on-accent: #FFFFFF;
+  --fg-on-dark: #F5F1EC;
+
+  /* Borders */
+  --border-default: #ECE7DF;
+  --border-subtle: #F2EEE8;
+  --border-accent: #FBD9C4;
+
+  /* Neutrals - Warm Gray Scale */
+  --gray-50: #FAFAF9;
+  --gray-100: #F5F5F4;
+  --gray-200: #E7E5E4;
+  --gray-300: #D6D3D1;
+  --gray-400: #A8A29E;
+  --gray-500: #78716C;
+  --gray-600: #57534E;
+  --gray-700: #44403C;
+  --gray-800: #292524;
+  --gray-900: #1C1917;
+
+  /* Semantic Colors */
+  --color-success: #047857;
+  --color-success-bg: #ECFDF5;
+  --color-warning: #B45309;
+  --color-warning-bg: #FFFBEB;
+  --color-error: #B91C1C;
+  --color-error-bg: #FEF2F2;
+  --color-info: #1D4ED8;
+  --color-info-bg: #EFF6FF;
+
+  /* Accent Tints */
+  --accent-tint: #FFF1E9;
+  --accent-tint-hover: #FFE7DA;
+  --accent-tint-border: #FBD9C4;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COLOR TOKENS - DARK MODE
+   ═══════════════════════════════════════════════════════════════════ */
+.dark {
+  --surface-page: #14110F;
+  --surface-card: #1E1916;
+  --surface-raised: #241E1A;
+  --surface-sunken: #100D0B;
+  --surface-overlay: rgba(20, 17, 15, 0.85);
+
+  --fg-default: #F5F1EC;
+  --fg-muted: #A69C8E;
+  --fg-subtle: #7A6F63;
+  --fg-on-dark: #F5F1EC;
+
+  --border-default: #2E2822;
+  --border-subtle: #26201B;
+  --border-accent: #5C2D10;
+
+  --gray-50: #1C1917;
+  --gray-100: #241F1B;
+  --gray-200: #2E2822;
+  --gray-300: #3D362E;
+  --gray-400: #6F6459;
+  --gray-500: #8A7F72;
+  --gray-600: #A69C8E;
+  --gray-700: #C9C0B4;
+  --gray-800: #E5DED4;
+  --gray-900: #F5F1EC;
+
+  --color-success-bg: #10281c;
+  --color-warning-bg: #2a2006;
+  --color-error-bg: #2a1414;
+  --color-info-bg: #10192a;
+
+  --accent-tint: #2a1206;
+  --accent-tint-hover: #3a1a0a;
+  --accent-tint-border: #5C2D10;
+
+  --gradient-fire-soft: linear-gradient(135deg, #2a1206, #180c05);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TYPOGRAPHY TOKENS
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Font Family */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Font Sizes - Editorial Scale */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: clamp(34px, calc(3.2vw + 20px), 42px);
+  --text-5xl: clamp(42px, calc(4vw + 22px), 56px);
+  --text-6xl: clamp(52px, calc(5vw + 26px), 72px);
+  --text-display: clamp(44px, calc(6vw + 20px), 88px);
+
+  /* Font Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* Line Heights */
+  --leading-none: 0.96;
+  --leading-tight: 1.05;
+  --leading-snug: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --leading-loose: 1.8;
+
+  /* Letter Spacing */
+  --tracking-tightest: -0.04em;
+  --tracking-tighter: -0.03em;
+  --tracking-tight: -0.012em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.08em;
+  --tracking-widest: 0.12em;
+
+  /* Measures - Optimal Line Lengths */
+  --measure-lead: 42ch;
+  --measure-body: 66ch;
+  --measure-narrow: 34ch;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SPACING & LAYOUT TOKENS
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Spacing Scale - 4px Base */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Layout */
+  --content-max: 1200px;
+  --content-padding: 40px;
+  --nav-height: 70px;
+  --section-padding: 100px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BORDER RADIUS TOKENS
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --radius-sm: 9px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 100px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHADOW TOKENS - LIGHT MODE
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Base Shadows */
+  --shadow-sm: 0 1px 2px rgba(20, 17, 15, 0.04), 0 3px 8px rgba(20, 17, 15, 0.05);
+  --shadow-md: 0 2px 4px rgba(20, 17, 15, 0.04), 0 8px 20px -6px rgba(20, 17, 15, 0.09), 0 20px 36px -14px rgba(20, 17, 15, 0.10);
+  --shadow-lg: 0 2px 6px rgba(20, 17, 15, 0.05), 0 14px 32px -10px rgba(20, 17, 15, 0.12), 0 36px 64px -20px rgba(20, 17, 15, 0.14);
+
+  /* Glow Shadows */
+  --shadow-glow: 0 10px 40px rgba(249, 115, 22, 0.28);
+  --shadow-glow-hover: 0 14px 44px rgba(249, 115, 22, 0.38);
+  --shadow-glow-sm: 0 6px 16px rgba(249, 115, 22, 0.28);
+
+  /* Card Shadows */
+  --shadow-card: 0 1px 2px rgba(20, 17, 15, 0.03), 0 8px 20px -8px rgba(20, 17, 15, 0.07), 0 24px 48px -18px rgba(20, 17, 15, 0.10);
+  --shadow-card-hover: 0 2px 4px rgba(20, 17, 15, 0.04), 0 16px 32px -10px rgba(20, 17, 15, 0.10), 0 36px 64px -18px rgba(249, 115, 22, 0.12);
+  --inset-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Button Shadows */
+  --shadow-btn-glow: 0 1px 2px rgba(226, 58, 46, 0.20), 0 8px 20px -4px rgba(249, 115, 22, 0.32), 0 20px 36px -12px rgba(249, 115, 22, 0.24);
+  --shadow-btn-glow-hover: 0 2px 3px rgba(226, 58, 46, 0.24), 0 12px 28px -4px rgba(249, 115, 22, 0.42), 0 28px 48px -12px rgba(249, 115, 22, 0.30);
+  --shadow-btn-glow-pressed: inset 0 2px 5px rgba(140, 40, 10, 0.35), 0 2px 8px rgba(249, 115, 22, 0.22);
+  --shadow-btn-solid: 0 1px 2px rgba(20, 17, 15, 0.08), 0 6px 16px -6px rgba(20, 17, 15, 0.16);
+  --shadow-btn-solid-hover: 0 2px 3px rgba(20, 17, 15, 0.10), 0 12px 26px -6px rgba(20, 17, 15, 0.22);
+  --shadow-btn-solid-pressed: inset 0 2px 5px rgba(0, 0, 0, 0.30);
+  --shadow-btn-ghost-pressed: inset 0 1px 4px rgba(11, 13, 16, 0.10);
+
+  /* Focus Ring */
+  --focus-ring: 0 0 0 4px rgba(249, 115, 22, 0.22);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHADOW TOKENS - DARK MODE
+   ═══════════════════════════════════════════════════════════════════ */
+.dark {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22), 0 3px 8px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.24), 0 8px 20px -6px rgba(0, 0, 0, 0.28), 0 20px 36px -14px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.26), 0 14px 32px -10px rgba(0, 0, 0, 0.36), 0 36px 64px -20px rgba(0, 0, 0, 0.34);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 20px -8px rgba(0, 0, 0, 0.30), 0 24px 48px -18px rgba(0, 0, 0, 0.34);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.26), 0 16px 36px -10px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(249, 115, 22, 0.10);
+  --inset-card-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --shadow-btn-solid: 0 1px 2px rgba(0, 0, 0, 0.30), 0 6px 16px -4px rgba(0, 0, 0, 0.40);
+  --shadow-btn-solid-hover: 0 2px 3px rgba(0, 0, 0, 0.34), 0 12px 26px -4px rgba(0, 0, 0, 0.46);
+  --shadow-btn-solid-pressed: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+
+  --focus-ring: 0 0 0 4px rgba(249, 115, 22, 0.32);
+}

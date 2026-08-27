@@ -8,6 +8,7 @@ import {
   setRefreshCookie,
   getRefreshCookie,
 } from "@/services/auth/auth";
+import { devMockEnabled } from "@/services/auth/dev-mock";
 
 export async function POST() {
   const token = await getRefreshCookie();
@@ -18,6 +19,19 @@ export async function POST() {
   const payload = await verifyRefreshToken(token);
   if (!payload) {
     return NextResponse.json({ error: "Invalid refresh token." }, { status: 401 });
+  }
+
+  // Dev-only bypass: no DATABASE_URL, so there's no session table to check
+  // against and no user row to refetch — just reissue tokens for the same
+  // (already-verified) payload. See src/services/auth/dev-mock.ts.
+  if (devMockEnabled) {
+    const newAccessToken = await createAccessToken(payload);
+    const newRefreshToken = await createRefreshToken(payload);
+    await setRefreshCookie(newRefreshToken);
+    return NextResponse.json({
+      accessToken: newAccessToken,
+      user: { id: payload.sub, name: payload.name, email: payload.email, role: payload.role },
+    });
   }
 
   // Verify token exists in DB (not revoked)

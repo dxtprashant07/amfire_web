@@ -1,14 +1,9 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { Panel, PanelHeader } from "@/components/admin/ui";
 
 const integrations = [
-  {
-    name: "Zoho CRM",
-    description: "Lead pipeline, contacts, deals, automation",
-    url: "https://crm.zoho.in",
-    envVars: ["ZOHO_CLIENT_ID", "ZOHO_CLIENT_SECRET", "ZOHO_REFRESH_TOKEN"],
-  },
   {
     name: "Supabase",
     description: "PostgreSQL database, file storage, auth",
@@ -44,63 +39,65 @@ const envVarDocs = [
 
 export default function AdminSettingsPage() {
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground mb-2">Settings</h1>
-      <p className="text-sm text-muted-foreground mb-8">
+    <div>
+      <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Settings</h1>
+      <p className="mb-7 mt-1.5 text-[14.5px] text-[var(--fg-muted)]">
         Integration status and configuration reference.
       </p>
 
-      {/* Integrations */}
-      <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">Integrations</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-        {integrations.map((int) => (
-          <a
-            key={int.name}
-            href={int.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group p-5 rounded-xl border border-border bg-card hover:border-primary/20 hover:shadow-sm transition-all"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                {int.name}
-              </p>
-              <ExternalLink size={12} className="text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">{int.description}</p>
-            {int.envVars.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {int.envVars.map((v) => (
-                  <span key={v} className="px-2 py-0.5 rounded text-[10px] font-mono bg-secondary text-muted-foreground">
-                    {v}
-                  </span>
-                ))}
+      <Panel className="mb-6">
+        <PanelHeader title="Integrations" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {integrations.map((int) => (
+            <a
+              key={int.name}
+              href={int.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group rounded-[var(--radius-md)] border border-[var(--border-default)] p-4 transition-colors hover:border-[var(--color-orange)]"
+            >
+              <div className="mb-1.5 flex items-center gap-2">
+                <p className="text-[13.5px] font-bold text-[var(--fg-default)] group-hover:text-[var(--color-orange)]">
+                  {int.name}
+                </p>
+                <ExternalLink size={12} className="text-[var(--fg-muted)]" />
               </div>
-            )}
-          </a>
-        ))}
-      </div>
+              <p className="mb-3 text-xs text-[var(--fg-muted)]">{int.description}</p>
+              {int.envVars.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {int.envVars.map((v) => (
+                    <span key={v} className="rounded bg-[var(--surface-sunken)] px-2 py-0.5 font-mono text-[10px] text-[var(--fg-muted)]">
+                      {v}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
+      </Panel>
 
-      {/* Env vars reference */}
-      <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">Environment Variables Reference</h2>
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <table className="w-full text-sm">
+      <Panel className="p-0">
+        <div className="p-6 pb-0">
+          <PanelHeader title="Environment variables reference" />
+        </div>
+        <table className="w-full border-collapse font-sans">
           <thead>
-            <tr className="border-b border-border bg-secondary/30">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-foreground">Variable</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-foreground">Description</th>
+            <tr>
+              <th className="border-b border-[var(--border-default)] px-6 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Variable</th>
+              <th className="border-b border-[var(--border-default)] px-6 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Description</th>
             </tr>
           </thead>
           <tbody>
-            {envVarDocs.map((v, i) => (
-              <tr key={v.key} className={i < envVarDocs.length - 1 ? "border-b border-border" : ""}>
-                <td className="px-4 py-3 font-mono text-xs text-primary">{v.key}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{v.desc}</td>
+            {envVarDocs.map((v) => (
+              <tr key={v.key}>
+                <td className="border-b border-[var(--border-subtle)] px-6 py-3 font-mono text-xs text-[var(--color-orange)] last:border-b-0">{v.key}</td>
+                <td className="border-b border-[var(--border-subtle)] px-6 py-3 text-xs text-[var(--fg-muted)] last:border-b-0">{v.desc}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Panel>
     </div>
   );
 }

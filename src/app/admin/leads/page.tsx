@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/stores/auth-store";
 import {
-  Users, ExternalLink, AlertCircle, CheckCircle2, Clock,
+  Users, AlertCircle, CheckCircle2, Clock,
   Phone, Mail, Building2, Calendar, MessageSquare,
 } from "lucide-react";
+import { Panel, Chip, EmptyState } from "@/components/admin/ui";
 
 interface Lead {
   id: string;
@@ -26,15 +27,15 @@ interface Lead {
 
 const STATUSES = ["NEW", "CONTACTED", "DISCOVERY", "PROPOSAL", "NEGOTIATION", "WON", "LOST", "NURTURE"];
 
-const statusColors: Record<string, string> = {
-  NEW: "bg-blue-500/10 text-blue-600",
-  CONTACTED: "bg-purple-500/10 text-purple-600",
-  DISCOVERY: "bg-cyan-500/10 text-cyan-600",
-  PROPOSAL: "bg-primary/10 text-primary",
-  NEGOTIATION: "bg-yellow-500/10 text-yellow-600",
-  WON: "bg-green-500/10 text-green-600",
-  LOST: "bg-red-500/10 text-red-600",
-  NURTURE: "bg-amber-500/10 text-amber-600",
+const statusTone: Record<string, "info" | "warning" | "success" | "error" | "neutral"> = {
+  NEW: "info",
+  CONTACTED: "info",
+  DISCOVERY: "warning",
+  PROPOSAL: "warning",
+  NEGOTIATION: "warning",
+  WON: "success",
+  LOST: "error",
+  NURTURE: "neutral",
 };
 
 export default function AdminLeadsPage() {
@@ -76,17 +77,11 @@ export default function AdminLeadsPage() {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Leads</h1>
-          <p className="text-sm text-muted-foreground">
-            {leads.length} total · {newCount} new · {activeCount} active
-          </p>
-        </div>
-        <a href="https://crm.zoho.in" target="_blank" rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-          <ExternalLink size={14} /> Zoho CRM
-        </a>
+      <div className="mb-6">
+        <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Leads</h1>
+        <p className="mt-1 text-[14.5px] text-[var(--fg-muted)]">
+          {leads.length} total · {newCount} new · {activeCount} active
+        </p>
       </div>
 
       {msg.text && (
@@ -100,21 +95,20 @@ export default function AdminLeadsPage() {
           {[...Array(5)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-secondary animate-pulse" />)}
         </div>
       ) : leads.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Users size={40} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No leads yet. They&apos;ll appear here when visitors submit the contact form.</p>
-        </div>
+        <Panel>
+          <EmptyState icon={<Users size={32} className="text-[var(--fg-subtle)]" />} text="No leads yet. They'll appear here when visitors submit the contact form." />
+        </Panel>
       ) : (
         <div className="space-y-2">
           {leads.map((lead) => {
             const expanded = expandedId === lead.id;
 
             return (
-              <div key={lead.id} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div key={lead.id} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
                 {/* Lead row */}
                 <button
                   onClick={() => { setExpandedId(expanded ? null : lead.id); setEditNotes(lead.notes || ""); }}
-                  className="w-full flex items-center gap-4 p-4 text-left hover:bg-secondary/30 transition-colors"
+                  className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[var(--surface-sunken)]"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -134,9 +128,7 @@ export default function AdminLeadsPage() {
                     <span className="text-[11px] text-muted-foreground">
                       {new Date(lead.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColors[lead.status] || ""}`}>
-                      {lead.status}
-                    </span>
+                    <Chip tone={statusTone[lead.status] ?? "neutral"}>{lead.status}</Chip>
                   </div>
                 </button>
 

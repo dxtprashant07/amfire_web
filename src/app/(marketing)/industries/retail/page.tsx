@@ -1,0 +1,246 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, ShoppingCart, CheckCircle2 } from "lucide-react";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
+
+export const metadata: Metadata = {
+  title: "Retail & E-Commerce",
+  description: "Custom e-commerce storefronts, inventory systems, multi-vendor marketplaces, and AI-powered recommendation engines.",
+};
+
+const painPoints = [
+  { title: "Generic storefronts that don't convert", desc: "Template-based stores look identical to competitors. Custom UX, faster load times, and better checkout flows directly impact revenue." },
+  { title: "Inventory and order chaos at scale", desc: "Spreadsheets and manual tracking break down as order volumes grow. Stockouts and overselling cost customers and margin." },
+  { title: "No personalisation", desc: "Showing every customer the same catalogue is leaving money on the table. Personalised recommendations drive 30–40% more revenue." },
+  { title: "Fragmented ops tools", desc: "Order management in one tool, inventory in another, shipping in a third. Manual handoffs between systems slow fulfilment and create errors." },
+];
+
+const deliverables = [
+  "Custom e-commerce storefronts built for conversion",
+  "Inventory and order management systems with low-stock alerts",
+  "Multi-vendor marketplace platforms",
+  "AI-powered product recommendation engines",
+  "Mobile shopping apps (iOS + Android) with cart and checkout",
+  "Payment gateway integrations (Razorpay, Stripe, COD)",
+  "Seller dashboards with sales analytics and payout management",
+  "WhatsApp and email order notification automation",
+];
+
+const stack = [
+  { name: "Next.js", color: "#000" },
+  { name: "React Native", color: "#61DAFB" },
+  { name: "Node.js", color: "#339933" },
+  { name: "PostgreSQL", color: "#336791" },
+  { name: "Redis", color: "#DC382D" },
+  { name: "Razorpay", color: "#02042B" },
+  { name: "Stripe", color: "#635BFF" },
+  { name: "OpenAI", color: "#412991" },
+  { name: "AWS S3", color: "#FF9900" },
+  { name: "Algolia", color: "#003DFF" },
+  { name: "Cloudinary", color: "#3448C5" },
+  { name: "Twilio", color: "#F22F46" },
+];
+
+const caseStudies = [
+  {
+    title: "Threads & Co. — D2C Fashion Storefront",
+    desc: "Built a custom Next.js storefront for a D2C fashion brand with a visual product builder, size recommendation AI, Razorpay checkout, and a mobile app — resulting in a 40% improvement in checkout conversion.",
+    tags: ["Next.js", "Razorpay", "OpenAI", "React Native"],
+    result: "40% improvement in checkout conversion",
+  },
+  {
+    title: "MarketHub — Multi-Vendor Marketplace",
+    desc: "End-to-end marketplace platform connecting 200+ sellers with buyers — seller onboarding, product listing, order routing, split payouts, and an admin dashboard with dispute management.",
+    tags: ["Next.js", "Node.js", "PostgreSQL", "Razorpay", "AWS"],
+    result: "200+ sellers onboarded in 3 months",
+  },
+];
+
+const faqs = [
+  {
+    q: "Should I build a custom store or use Shopify?",
+    a: "Shopify is the right choice if you need to move fast with a simple catalogue. Custom builds make sense when you need unique UX, complex product configurators, marketplace features, or deep integrations with your ERP and inventory. We help you make the right call based on your goals.",
+  },
+  {
+    q: "Can you build a multi-vendor marketplace?",
+    a: "Yes — this is one of our most common retail engagements. We build full marketplace platforms with seller onboarding, product approval workflows, split payments, dispute management, and commission tracking.",
+  },
+  {
+    q: "How do you implement AI recommendations?",
+    a: "We use collaborative filtering (what similar users bought), content-based filtering (product attribute similarity), and LLM-powered semantic search. The right approach depends on your catalogue size and data volume.",
+  },
+  {
+    q: "Which payment gateways do you integrate?",
+    a: "Razorpay and PayU for India-first products, Stripe for international. We also handle COD order flows, UPI, wallet payments, and EMI options.",
+  },
+  {
+    q: "Can you connect the store to our existing ERP or WMS?",
+    a: "Yes. We integrate with ERPs (SAP, Tally, Zoho Books) and warehouse management systems via API or database-level sync. Order data, inventory levels, and fulfilment status stay in sync automatically.",
+  },
+];
+
+export default function RetailPage() {
+  return (
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden py-16 md:py-24 lg:py-32">
+        <div className="amfire-wrap">
+          <div className="max-w-3xl">
+            <ScrollReveal>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border text-xs font-medium text-muted-foreground mb-5">
+                <ShoppingCart size={12} className="text-primary" />
+                Retail & E-Commerce
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={0.05}>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold leading-[1.08] tracking-tight text-foreground mb-5 md:mb-7">
+                Commerce experiences{" "}
+                <span className="gradient-text">that convert</span>
+              </h1>
+            </ScrollReveal>
+            <ScrollReveal delay={0.1}>
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed mb-7 md:mb-10">
+                Custom storefronts, marketplace platforms, and AI recommendation engines — built to drive revenue and scale your retail operations without the spreadsheet chaos.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.15}>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/contact" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.97] transition-all">
+                  Build Your Commerce Platform <ArrowRight size={15} />
+                </Link>
+                <Link href="/work" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-secondary/50 hover:border-primary/30 active:scale-[0.97] transition-all">
+                  See Case Studies
+                </Link>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" aria-hidden="true" />
+      </section>
+
+      {/* Pain Points */}
+      <section className="py-10 md:py-16 bg-secondary/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+          <ScrollReveal>
+            <p className="text-xs font-semibold text-primary tracking-wider uppercase mb-3">Challenges we solve</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-8">What retail businesses struggle with</h2>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {painPoints.map((p, i) => (
+              <ScrollReveal key={p.title} delay={i * 0.06}>
+                <div className="p-5 rounded-xl border border-border bg-card">
+                  <h3 className="text-sm font-semibold text-foreground mb-1.5">{p.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* What We Build */}
+      <section className="py-10 md:py-16">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+          <ScrollReveal>
+            <p className="text-xs font-semibold text-primary tracking-wider uppercase mb-3">What We Build</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-8">Retail & e-commerce deliverables</h2>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {deliverables.map((item, i) => (
+              <ScrollReveal key={i} delay={i * 0.04}>
+                <div className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/25 transition-all">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">{item}</span>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Tech Stack */}
+      <section className="py-10 md:py-16 bg-secondary/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+          <ScrollReveal>
+            <p className="text-xs font-semibold text-primary tracking-wider uppercase mb-3">Tech Stack</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-8">Technologies we use in Retail</h2>
+          </ScrollReveal>
+          <div className="flex flex-wrap gap-3">
+            {stack.map((tech, i) => (
+              <ScrollReveal key={tech.name} delay={i * 0.03}>
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card text-sm font-medium text-foreground hover:border-primary/40 hover:bg-secondary/50 transition-all cursor-default">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tech.color }} />
+                  {tech.name}
+                </span>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Case Studies */}
+      <section className="py-10 md:py-16">
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+          <ScrollReveal>
+            <p className="text-xs font-semibold text-primary tracking-wider uppercase mb-3">Case Studies</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-8">Commerce platforms we've shipped</h2>
+          </ScrollReveal>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {caseStudies.map((cs, i) => (
+              <ScrollReveal key={cs.title} delay={i * 0.08}>
+                <div className="p-6 rounded-2xl border border-border bg-card hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 transition-all h-full flex flex-col">
+                  <h3 className="text-base font-semibold text-foreground mb-2">{cs.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{cs.desc}</p>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {cs.tags.map((t) => (
+                      <span key={t} className="px-2.5 py-1 rounded-full bg-secondary border border-border text-xs font-medium text-foreground">{t}</span>
+                    ))}
+                  </div>
+                  <p className="text-xs font-semibold text-primary">{cs.result}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-10 md:py-16 bg-secondary/30">
+        <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+          <ScrollReveal>
+            <p className="text-xs font-semibold text-primary tracking-wider uppercase mb-3">FAQ</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-8">Retail questions answered</h2>
+          </ScrollReveal>
+          <div className="space-y-4">
+            {faqs.map((faq, i) => (
+              <ScrollReveal key={i} delay={i * 0.06}>
+                <div className="p-5 rounded-xl border border-border bg-card">
+                  <h3 className="text-sm font-semibold text-foreground mb-2">{faq.q}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-14 md:py-20">
+        <div className="container mx-auto px-4 sm:px-6 text-center max-w-2xl">
+          <ScrollReveal>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Ready to build your commerce platform?
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base mb-8 max-w-lg mx-auto">
+              Tell us your retail model — D2C, marketplace, or omnichannel — and we'll scope the right build.
+            </p>
+            <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.97] transition-all">
+              Start the Conversation <ArrowRight size={15} />
+            </Link>
+          </ScrollReveal>
+        </div>
+      </section>
+
+    </>
+  );
+}
