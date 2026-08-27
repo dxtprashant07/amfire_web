@@ -6,6 +6,7 @@ import {
   HeadphonesIcon, AlertCircle, CheckCircle2, Clock, XCircle,
   MessageSquare, User as UserIcon,
 } from "lucide-react";
+import { Panel, Chip, EmptyState } from "@/components/admin/ui";
 
 interface Ticket {
   id: string;
@@ -19,11 +20,17 @@ interface Ticket {
 
 const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 
-const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string }> = {
-  OPEN: { icon: AlertCircle, color: "text-blue-600", bg: "bg-blue-500/10" },
-  IN_PROGRESS: { icon: Clock, color: "text-primary", bg: "bg-primary/10" },
-  RESOLVED: { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-500/10" },
-  CLOSED: { icon: XCircle, color: "text-muted-foreground", bg: "bg-secondary" },
+const statusConfig: Record<string, { icon: typeof Clock; tone: "info" | "warning" | "success" | "neutral" }> = {
+  OPEN: { icon: AlertCircle, tone: "info" },
+  IN_PROGRESS: { icon: Clock, tone: "warning" },
+  RESOLVED: { icon: CheckCircle2, tone: "success" },
+  CLOSED: { icon: XCircle, tone: "neutral" },
+};
+const toneIconBg: Record<string, string> = {
+  info: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
+  warning: "bg-[var(--accent-tint)] text-[var(--color-orange)]",
+  success: "bg-[var(--color-success-bg)] text-[var(--color-success)]",
+  neutral: "bg-[var(--surface-sunken)] text-[var(--fg-muted)]",
 };
 
 export default function AdminSupportPage() {
@@ -57,21 +64,20 @@ export default function AdminSupportPage() {
   return (
     <div className="max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Support Tickets</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Support Tickets</h1>
+        <p className="mt-1 text-[14.5px] text-[var(--fg-muted)]">
           {tickets.length} total · {openCount} open
         </p>
       </div>
 
       {loading ? (
         <div className="space-y-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-secondary animate-pulse" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />)}
         </div>
       ) : tickets.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <HeadphonesIcon size={40} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No support tickets yet.</p>
-        </div>
+        <Panel>
+          <EmptyState icon={<HeadphonesIcon size={32} className="text-[var(--fg-subtle)]" />} text="No support tickets yet." />
+        </Panel>
       ) : (
         <div className="space-y-2">
           {tickets.map((t) => {
@@ -80,23 +86,21 @@ export default function AdminSupportPage() {
             const expanded = expandedId === t.id;
 
             return (
-              <div key={t.id} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div key={t.id} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
                 <button
                   onClick={() => setExpandedId(expanded ? null : t.id)}
-                  className="w-full flex items-center gap-4 p-4 text-left hover:bg-secondary/30 transition-colors"
+                  className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[var(--surface-sunken)]"
                 >
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                    <Icon size={16} className={cfg.color} />
+                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-[9px] ${toneIconBg[cfg.tone]}`}>
+                    <Icon size={16} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{t.subject}</p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13.5px] font-bold text-[var(--fg-default)]">{t.subject}</p>
+                    <p className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
                       <UserIcon size={10} /> {t.user.name} · {t.project.name} · {new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
                     </p>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${cfg.bg} ${cfg.color}`}>
-                    {t.status.replace("_", " ")}
-                  </span>
+                  <Chip tone={cfg.tone}>{t.status.replace("_", " ")}</Chip>
                 </button>
 
                 {expanded && (

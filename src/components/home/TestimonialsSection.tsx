@@ -1,7 +1,8 @@
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
+import type { testimonials as defaultTestimonials } from "@/config/home";
 
-export function TestimonialsSection() {
+export function TestimonialsSection({ testimonials }: { testimonials?: typeof defaultTestimonials }) {
   return (
     <section className="py-10 md:py-16 lg:py-20">
       <div className="container mx-auto px-4 sm:px-6">
@@ -13,7 +14,7 @@ export function TestimonialsSection() {
             From startups to enterprises — built with care, shipped with confidence.
           </p>
         </ScrollReveal>
-        <TestimonialsCarousel />
+        <TestimonialsCarousel testimonials={testimonials} />
       </div>
     </section>
   );

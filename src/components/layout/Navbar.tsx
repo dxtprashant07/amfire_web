@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Sun, Moon, LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogIn, LogOut, Menu, Moon, Sun, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
-// Theme is stored in the DOM (`<html class="dark">`). Components read it via
-// useSyncExternalStore so React can track it without setState-in-effect.
 const themeListeners = new Set<() => void>();
 const subscribeTheme = (cb: () => void) => {
   themeListeners.add(cb);
@@ -19,27 +16,14 @@ const getTheme = () => (document.documentElement.classList.contains("dark") ? "d
 const getServerTheme = () => "light" as const;
 const notifyTheme = () => themeListeners.forEach((cb) => cb());
 
-const solutionsLinks = [
-  { label: "Services Overview", href: "/services" },
-  { label: "Web Development", href: "/services/web-development" },
-  { label: "Mobile Apps", href: "/services/mobile-apps" },
-  { label: "AI & Agents", href: "/services/ai-agents" },
-  { label: "Automation", href: "/services/automation" },
-  { label: "Cloud & DevOps", href: "/services/cloud-devops" },
-  { label: "UI / UX Design", href: "/services/ui-ux-design" },
-];
-
-const workLinks = [
-  { label: "Portfolio & Case Studies", href: "/work" },
-  { label: "Industries We Serve", href: "/industries" },
-  { label: "How We Work", href: "/how-we-work" },
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Services", href: "/services" },
+  { label: "Products", href: "/products" },
+  { label: "Work", href: "/work" },
   { label: "Pricing", href: "/pricing" },
-];
-
-const aboutLinks = [
-  { label: "Our Story", href: "/about" },
-  { label: "FAQ", href: "/faq" },
-  { label: "Careers", href: "/careers" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export function Navbar() {
@@ -48,40 +32,20 @@ export function Navbar() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hidden, setHidden] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
-  const [workOpen, setWorkOpen] = useState(false);
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
-  const [mobileWorkOpen, setMobileWorkOpen] = useState(false);
-  const [mobileAboutOpen, setMobileAboutOpen] = useState(false);
   const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
   const isDark = theme === "dark";
-  const [lastPathname, setLastPathname] = useState(pathname);
-
-  // Reset menu state on route change (during render — avoids a cascading effect).
-  if (pathname !== lastPathname) {
-    setLastPathname(pathname);
-    setMobileOpen(false);
-    setSolutionsOpen(false);
-    setWorkOpen(false);
-    setAboutOpen(false);
-  }
-  const solutionsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const workTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const aboutTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const lastScrollY = useRef(0);
-  const solutionsRef = useRef<HTMLDivElement>(null);
-  const workRef = useRef<HTMLDivElement>(null);
-  const aboutRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    return () => {
-      clearTimeout(solutionsTimer.current);
-      clearTimeout(workTimer.current);
-      clearTimeout(aboutTimer.current);
+    const handleScroll = () => {
+      const y = window.scrollY;
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(docH > 0 ? (y / docH) * 100 : 0);
+      setScrolled(y > 8);
     };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const toggleTheme = () => {
@@ -91,196 +55,52 @@ export function Navbar() {
     notifyTheme();
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const y = window.scrollY;
-      const docH = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollProgress(docH > 0 ? (y / docH) * 100 : 0);
-      setScrolled(y > 10);
-      if (y > 200) {
-        setHidden(y > lastScrollY.current);
-      } else {
-        setHidden(false);
-      }
-      lastScrollY.current = y;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (solutionsRef.current && !solutionsRef.current.contains(e.target as Node)) setSolutionsOpen(false);
-      if (workRef.current && !workRef.current.contains(e.target as Node)) setWorkOpen(false);
-      if (aboutRef.current && !aboutRef.current.contains(e.target as Node)) setAboutOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const isActive = (hrefs: string[]) => hrefs.some((h) => pathname === h || pathname.startsWith(h + "/"));
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 
   return (
     <>
-      {/* Scroll progress bar */}
-      <div
-        className="fixed top-0 left-0 z-[60] h-[3px] gradient-bg transition-[width] duration-100"
-        style={{ width: `${scrollProgress}%` }}
-        aria-hidden="true"
-      />
+      <div className="fixed left-0 top-0 z-[60] h-[3px] gradient-bg transition-[width] duration-100" style={{ width: `${scrollProgress}%` }} aria-hidden="true" />
 
       <nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+          "fixed inset-x-0 top-0 z-50 border-b transition-all duration-300",
           scrolled
-            ? "bg-background/95 md:bg-background/80 md:backdrop-blur-md border-b border-border/50 shadow-sm"
-            : "bg-transparent",
-          hidden ? "-translate-y-full" : "translate-y-0"
+            ? "border-[var(--border-subtle)] bg-[var(--surface-overlay)] shadow-[0_1px_0_rgba(20,17,15,0.02)] backdrop-blur-[14px]"
+            : "border-transparent bg-transparent"
         )}
       >
-        <div className="container mx-auto flex items-center justify-between h-24 px-4 sm:px-6">
-          {/* Logo */}
-          <Link href="/" aria-label="amfire home" className="shrink-0 inline-flex items-center">
-            <Image
-              src="/logo.png"
-              alt="amfire"
-              width={320}
-              height={120}
-              priority
-              className="h-20 md:h-28 w-auto"
-            />
+        <div className={cn("amfire-wrap flex items-center justify-between transition-[height] duration-300", scrolled ? "h-14" : "h-[70px]")}>
+          <Link href="/" aria-label="amfire home" className="text-[21px] font-extrabold tracking-[-0.03em] text-[var(--fg-default)]">
+            am<span className="gradient-text">fire</span>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {/* Solutions dropdown */}
-            <div
-              ref={solutionsRef}
-              className="relative"
-              onMouseEnter={() => { clearTimeout(solutionsTimer.current); clearTimeout(workTimer.current); clearTimeout(aboutTimer.current); setSolutionsOpen(true); setWorkOpen(false); setAboutOpen(false); }}
-              onMouseLeave={() => { solutionsTimer.current = setTimeout(() => setSolutionsOpen(false), 200); }}
-            >
-              <button
-                onClick={() => { setSolutionsOpen((v) => !v); setWorkOpen(false); setAboutOpen(false); }}
+          <div className="hidden items-center gap-7 md:flex">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
                 className={cn(
-                  "flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary",
-                  isActive(["/services"]) ? "text-primary" : "text-muted-foreground"
+                  "relative py-2 text-[13.5px] font-medium text-[var(--fg-muted)] transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:origin-left after:scale-x-0 after:bg-[var(--color-orange)] after:transition-transform hover:text-[var(--fg-default)] hover:after:scale-x-100",
+                  isActive(link.href) && "font-semibold text-[var(--fg-default)] after:scale-x-100"
                 )}
               >
-                Solutions
-                <ChevronDown size={14} className={cn("transition-transform duration-200", solutionsOpen && "rotate-180")} />
-              </button>
-              {solutionsOpen && (
-                <div className="absolute top-full left-0 mt-2 w-60 rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {solutionsLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="block px-4 py-2.5 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+                {link.label}
+              </Link>
+            ))}
+          </div>
 
-            {/* Work dropdown */}
-            <div
-              ref={workRef}
-              className="relative"
-              onMouseEnter={() => { clearTimeout(workTimer.current); clearTimeout(solutionsTimer.current); clearTimeout(aboutTimer.current); setWorkOpen(true); setSolutionsOpen(false); setAboutOpen(false); }}
-              onMouseLeave={() => { workTimer.current = setTimeout(() => setWorkOpen(false), 200); }}
-            >
-              <button
-                onClick={() => { setWorkOpen((v) => !v); setSolutionsOpen(false); setAboutOpen(false); }}
-                className={cn(
-                  "flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary",
-                  isActive(["/work", "/industries", "/how-we-work", "/pricing"]) ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                Work
-                <ChevronDown size={14} className={cn("transition-transform duration-200", workOpen && "rotate-180")} />
-              </button>
-              {workOpen && (
-                <div className="absolute top-full left-0 mt-2 w-56 rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {workLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="block px-4 py-2.5 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* About dropdown */}
-            <div
-              ref={aboutRef}
-              className="relative"
-              onMouseEnter={() => { clearTimeout(aboutTimer.current); clearTimeout(solutionsTimer.current); clearTimeout(workTimer.current); setAboutOpen(true); setSolutionsOpen(false); setWorkOpen(false); }}
-              onMouseLeave={() => { aboutTimer.current = setTimeout(() => setAboutOpen(false), 200); }}
-            >
-              <button
-                onClick={() => { setAboutOpen((v) => !v); setSolutionsOpen(false); setWorkOpen(false); }}
-                className={cn(
-                  "flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary",
-                  isActive(["/about", "/faq", "/careers"]) ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                About
-                <ChevronDown size={14} className={cn("transition-transform duration-200", aboutOpen && "rotate-180")} />
-              </button>
-              {aboutOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 rounded-xl border border-border bg-card/95 backdrop-blur-md shadow-lg py-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {aboutLinks.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="block px-4 py-2.5 text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Blog */}
-            <Link
-              href="/blog"
-              className={cn("text-sm font-medium transition-colors hover:text-primary", pathname === "/blog" ? "text-primary" : "text-muted-foreground")}
-            >
-              Blog
-            </Link>
-
-            {/* Contact */}
-            <Link
-              href="/contact"
-              className={cn("text-sm font-medium transition-colors hover:text-primary", pathname === "/contact" ? "text-primary" : "text-muted-foreground")}
-            >
-              Contact
-            </Link>
-
-            {/* Theme toggle */}
+          <div className="hidden items-center gap-3 md:flex">
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+              className="grid h-9 w-9 place-items-center rounded-[9px] text-[var(--fg-muted)] transition-colors hover:bg-[var(--accent-tint)] hover:text-[var(--color-orange)]"
             >
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
-            {/* Auth */}
             {user ? (
               <div className="flex items-center gap-2">
-                <Link
-                  href={user.role === "CLIENT" ? "/client" : "/admin"}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
+                <Link href={user.role === "CLIENT" ? "/client" : "/admin"} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--fg-muted)] transition-colors hover:text-[var(--color-orange)]">
                   <LayoutDashboard size={14} />
                   Dashboard
                 </Link>
@@ -289,159 +109,58 @@ export function Navbar() {
                     await fetch("/api/auth/logout", { method: "POST" });
                     clearAuth();
                   }}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors"
+                  className="grid h-8 w-8 place-items-center rounded-[9px] text-[var(--fg-muted)] transition-colors hover:bg-red-50 hover:text-red-600"
+                  aria-label="Logout"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={15} />
                 </button>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
+              <Link href="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--fg-muted)] transition-colors hover:text-[var(--color-orange)]">
+                <LogIn size={14} />
                 Login
               </Link>
             )}
 
-            {/* CTA */}
-            <Link
-              href="/contact"
-              className="inline-flex items-center px-5 py-2 rounded-full gradient-bg text-white text-sm font-medium hover:opacity-90 active:scale-[0.97] transition-all"
-            >
+            <Link href="/contact" className="amfire-primary inline-flex items-center gap-2 rounded-[9px] px-[18px] py-2.5 text-[13.5px] font-bold transition-all">
               Get a Proposal
             </Link>
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          <button className="grid h-10 w-10 place-items-center rounded-[9px] text-[var(--fg-default)] md:hidden" onClick={() => setMobileOpen((v) => !v)} aria-label="Toggle menu">
+            {mobileOpen ? <X size={23} /> : <Menu size={23} />}
           </button>
         </div>
 
-        {/* Mobile menu */}
-        {mobileOpen && (
-          <div className="md:hidden bg-background border-b border-border px-6 pb-6">
-            {/* Solutions accordion */}
-            <button
-              onClick={() => setMobileSolutionsOpen((v) => !v)}
-              className="w-full flex items-center justify-between py-3 text-base font-medium text-muted-foreground"
-            >
-              Solutions
-              <ChevronDown size={16} className={cn("transition-transform duration-200", mobileSolutionsOpen && "rotate-180")} />
-            </button>
-            {mobileSolutionsOpen && (
-              <div className="pl-4 pb-2 space-y-1">
-                {solutionsLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Work accordion */}
-            <button
-              onClick={() => setMobileWorkOpen((v) => !v)}
-              className="w-full flex items-center justify-between py-3 text-base font-medium text-muted-foreground"
-            >
-              Work
-              <ChevronDown size={16} className={cn("transition-transform duration-200", mobileWorkOpen && "rotate-180")} />
-            </button>
-            {mobileWorkOpen && (
-              <div className="pl-4 pb-2 space-y-1">
-                {workLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* About accordion */}
-            <button
-              onClick={() => setMobileAboutOpen((v) => !v)}
-              className="w-full flex items-center justify-between py-3 text-base font-medium text-muted-foreground"
-            >
-              About
-              <ChevronDown size={16} className={cn("transition-transform duration-200", mobileAboutOpen && "rotate-180")} />
-            </button>
-            {mobileAboutOpen && (
-              <div className="pl-4 pb-2 space-y-1">
-                {aboutLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block py-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            <Link href="/blog" className="block py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors">
-              Blog
-            </Link>
-            <Link href="/contact" className="block py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors">
-              Contact
-            </Link>
-
-            {user ? (
-              <>
-                <Link
-                  href={user.role === "CLIENT" ? "/client" : "/admin"}
-                  className="flex items-center gap-2 py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <LayoutDashboard size={16} />
-                  Dashboard
+        {mobileOpen ? (
+          <div className="border-t border-[var(--border-default)] bg-[var(--surface-overlay)] px-5 pb-6 pt-3 backdrop-blur-[14px] md:hidden">
+            <div className="mx-auto flex max-w-[520px] flex-col">
+              {navLinks.map((link) => (
+                <Link key={link.href} href={link.href} className={cn("rounded-[9px] px-3 py-3 text-base font-semibold text-[var(--fg-muted)]", isActive(link.href) && "bg-[var(--accent-tint)] text-[var(--color-orange)]")}>
+                  {link.label}
                 </Link>
-                <button
-                  onClick={async () => {
-                    await fetch("/api/auth/logout", { method: "POST" });
-                    clearAuth();
-                    setMobileOpen(false);
-                  }}
-                  className="flex items-center gap-2 py-3 text-base font-medium text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <LogOut size={16} />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link href="/login" className="block py-3 text-base font-medium text-muted-foreground hover:text-primary transition-colors">
-                Login
-              </Link>
-            )}
-
-            <div className="pt-4 flex flex-col gap-3">
-              <button
-                onClick={toggleTheme}
-                className="flex items-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
+              ))}
+              <button onClick={toggleTheme} className="flex items-center gap-2 rounded-[9px] px-3 py-3 text-base font-semibold text-[var(--fg-muted)]">
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
                 {isDark ? "Light mode" : "Dark mode"}
               </button>
-              <Link
-                href="/contact"
-                className="block w-full text-center py-3 rounded-full gradient-bg text-white font-medium hover:opacity-90 active:scale-[0.97] transition-all"
-              >
+              {user ? (
+                <Link href={user.role === "CLIENT" ? "/client" : "/admin"} className="flex items-center gap-2 rounded-[9px] px-3 py-3 text-base font-semibold text-[var(--fg-muted)]">
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+              ) : (
+                <Link href="/login" className="flex items-center gap-2 rounded-[9px] px-3 py-3 text-base font-semibold text-[var(--fg-muted)]">
+                  <LogIn size={16} />
+                  Login
+                </Link>
+              )}
+              <Link href="/contact" className="amfire-primary mt-3 inline-flex justify-center rounded-[9px] px-5 py-3 text-sm font-bold transition-all">
                 Get a Proposal
               </Link>
             </div>
           </div>
-        )}
+        ) : null}
       </nav>
     </>
   );
