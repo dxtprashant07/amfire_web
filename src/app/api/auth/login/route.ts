@@ -9,6 +9,7 @@ import {
   MAX_FAILED_ATTEMPTS,
   LOCKOUT_DURATION_MS,
 } from "@/services/auth/auth";
+import { devMockEnabled, findDevMockUser } from "@/services/auth/dev-mock";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -28,6 +29,24 @@ export async function POST(req: NextRequest) {
   }
 
   const { email, password } = parsed.data;
+
+  // Dev-only bypass: no DATABASE_URL configured yet (you wire it at deploy).
+  // Lets /login work against two hardcoded accounts so the auth flow and
+  // role-based redirects are testable without a real database. Disabled
+  // automatically the moment DATABASE_URL is set.
+  if (devMockEnabled) {
+    const mockPayload = findDevMockUser(email, password);
+    if (!mockPayload) {
+      return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
+    }
+    const accessToken = await createAccessToken(mockPayload);
+    const refreshToken = await createRefreshToken(mockPayload);
+    await setRefreshCookie(refreshToken);
+    return NextResponse.json({
+      accessToken,
+      user: { id: mockPayload.sub, name: mockPayload.name, email: mockPayload.email, role: mockPayload.role },
+    });
+  }
 
   const user = await prisma.user.findUnique({ where: { email } });
 

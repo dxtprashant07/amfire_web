@@ -1,53 +1,67 @@
-import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { cn } from '@/lib/cn';
 
-interface SectionHeaderProps {
-  eyebrow: string;
-  title: ReactNode;
-  description?: ReactNode;
-  align?: "left" | "center";
-  titleMb?: string;
-  descriptionMaxW?: string;
-  descriptionMb?: string;
+interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'full';
+  align?: 'left' | 'center';
 }
 
-export function SectionHeader({
-  eyebrow,
-  title,
-  description,
-  align = "left",
-  titleMb = "mb-3 md:mb-4",
-  descriptionMaxW = "max-w-lg",
-  descriptionMb = "mb-8 md:mb-10",
-}: SectionHeaderProps) {
-  const center = align === "center";
-  return (
-    <>
-      <p
-        className={cn(
-          "text-xs sm:text-sm font-medium text-primary tracking-wider uppercase mb-3 md:mb-4",
-          center && "text-center"
-        )}
+const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
+  (
+    {
+      eyebrow,
+      title,
+      description,
+      maxWidth = 'md',
+      align = 'center',
+      className,
+      ...props
+    },
+    ref
+  ) => {
+    const maxWidthStyles = {
+      sm: 'max-w-md',
+      md: 'max-w-2xl',
+      lg: 'max-w-4xl',
+      full: 'max-w-full',
+    };
+
+    const alignStyles = {
+      left: 'text-left',
+      center: 'text-center mx-auto',
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn(maxWidthStyles[maxWidth], alignStyles[align], className)}
+        {...props}
       >
-        {eyebrow}
-      </p>
-      <h2
-        className={cn(
-          "text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-foreground",
-          titleMb,
-          center && "text-center"
+        {eyebrow && (
+          <div className="amfire-eyebrow mb-4">
+            {eyebrow}
+          </div>
         )}
-      >
-        {title}
-      </h2>
-      {description && (
-        <p
-          className={cn(
-            "text-muted-foreground text-sm md:text-base lg:text-lg",
-            descriptionMaxW,
-            descriptionMb,
-            center && "mx-auto text-center"
-          )}
+        <h2 className="text-5xl font-extrabold text-fg-default mb-4 leading-tight">
+          {title}
+        </h2>
+        {description && (
+          <p className="text-lg text-fg-muted leading-relaxed">
+            {description}
+          </p>
+        )}
+      </div>
+    );
+  }
+);
+
+SectionHeader.displayName = 'SectionHeader';
+
+export { SectionHeader };
+export type { SectionHeaderProps };
         >
           {description}
         </p>
