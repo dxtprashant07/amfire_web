@@ -654,7 +654,7 @@ export const textDefaults: Record<string, string> = {
   "services.slack": "Slack",
   "services.ai-agents": "AI Agents",
   "services.intelligence-that-works-24-7": "Intelligence that works 24/7.",
-  "services.llm-integration-gpt-gemini-claude": "LLM integration (GPT, Gemini, Claude)",
+  "services.llm-integration-gpt-gemini-llama": "LLM integration (GPT, Gemini, Llama)",
   "services.multi-agent-orchestration-systems": "Multi-agent orchestration systems",
   "services.rag-systems-for-document-intelligence": "RAG systems for document intelligence",
   "services.langchain": "LangChain",

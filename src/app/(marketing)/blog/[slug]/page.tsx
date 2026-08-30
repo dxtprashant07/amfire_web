@@ -35,7 +35,7 @@ const posts: Record<string, {
       },
       {
         heading: "The Tech Stack Behind Production Agents",
-        body: "Production-grade agents require more than an LLM API call. Our typical stack includes: an orchestration layer (LangChain or custom), a vector database for memory (pgvector or Pinecone), tool integrations via APIs, a state management system, and robust error handling with human-in-the-loop fallbacks. The LLM itself (Claude, GPT-4o, or Gemini) is just one component in a much larger system.",
+        body: "Production-grade agents require more than an LLM API call. Our typical stack includes: an orchestration layer (LangChain or custom), a vector database for memory (pgvector or Pinecone), tool integrations via APIs, a state management system, and robust error handling with human-in-the-loop fallbacks. The LLM itself (GPT-4o, Gemini, or Llama) is just one component in a much larger system.",
       },
       {
         heading: "What to Consider Before Commissioning an Agent",
@@ -114,7 +114,7 @@ const posts: Record<string, {
       },
       {
         heading: "The Technical Architecture",
-        body: "A typical WhatsApp automation stack includes: a WhatsApp Business API provider (Twilio, Gupshup, or the official Meta API), a workflow orchestration layer (n8n, custom Node.js, or Python), a CRM or database for contact management, optional AI layer for intelligent responses (Claude or GPT for understanding customer intent), and webhook integrations for triggering workflows from external events (new order, payment received, form submitted).",
+        body: "A typical WhatsApp automation stack includes: a WhatsApp Business API provider (Twilio, Gupshup, or the official Meta API), a workflow orchestration layer (n8n, custom Node.js, or Python), a CRM or database for contact management, optional AI layer for intelligent responses (an LLM for understanding customer intent), and webhook integrations for triggering workflows from external events (new order, payment received, form submitted).",
       },
       {
         heading: "Real Results We've Delivered",

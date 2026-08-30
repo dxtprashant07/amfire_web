@@ -42,8 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# AI tool configs (Claude Code internal files)
-CLAUDE.md
+# Local AI tool configs and planning notes
+[Cc][Ll][Aa][Uu][Dd][Ee].md
+.[Cc][Ll][Aa][Uu][Dd][Ee]/
 AGENTS.md
 skill.md
 
