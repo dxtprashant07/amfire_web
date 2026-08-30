@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { CheckCircle2, Clock, AlertTriangle, Download, AlertCircle } from "lucide-react";
 
 interface Payment {
   id: string;
@@ -17,8 +16,12 @@ interface Payment {
   project: { name: string };
 }
 
+const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+const day = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
 export default function ClientPaymentsPage() {
-  const { data: payments = [], isLoading: loading, error } = useQuery({
+  const { data: payments = [], isLoading, error } = useQuery({
     queryKey: ["client-payments"],
     queryFn: async () => {
       const res = await authFetch("/api/client/payments");
@@ -28,110 +31,94 @@ export default function ClientPaymentsPage() {
     },
   });
 
-  const statusConfig: Record<string, { icon: typeof CheckCircle2; color: string; bg: string }> = {
-    PAID: { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-100 dark:bg-green-500/20" },
-    PENDING: { icon: Clock, color: "text-yellow-600", bg: "bg-yellow-100 dark:bg-yellow-500/20" },
-    OVERDUE: { icon: AlertTriangle, color: "text-red-600", bg: "bg-red-100 dark:bg-red-500/20" },
-  };
-
-  const formatCurrency = (amount: string) =>
-    `₹${Number(amount).toLocaleString("en-IN")}`;
-
-  const totalPaid = payments.filter((p) => p.status === "PAID").reduce((sum, p) => sum + Number(p.amount), 0);
-  const totalDue = payments.filter((p) => p.status !== "PAID").reduce((sum, p) => sum + Number(p.amount), 0);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="max-w-3xl space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-2 gap-4">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
-        </div>
-        {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-20 rounded-xl" />
-        ))}
+      <div className="page on">
+        <Skeleton className="h-10 w-56 mb-6" />
+        <Skeleton className="h-28 mb-5 rounded-2xl" />
+        <Skeleton className="h-56 rounded-2xl" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="max-w-3xl p-6 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
-        <AlertCircle size={32} className="mx-auto mb-3 text-destructive" />
-        <p className="text-sm text-destructive font-medium">Failed to load payments.</p>
-        <p className="text-xs text-muted-foreground mt-1">Please try refreshing the page.</p>
+      <div className="page on">
+        <div className="welcome"><h1>Payments</h1><p>We couldn&apos;t load your invoices. Please refresh, or email contact@amfire.in.</p></div>
       </div>
     );
   }
 
+  const unpaid = payments.filter((p) => p.status !== "PAID");
+  const outstanding = unpaid.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
+  const nextDue = unpaid.filter((p) => p.dueDate).sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1))[0];
+
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground mb-6">Payments</h1>
+    <div className="page on">
+      <div className="welcome">
+        <h1>Payments</h1>
+        <p>Milestone-based invoicing. Pay only after each stage is signed off.</p>
+      </div>
 
-      {payments.length === 0 ? (
-        <div className="p-8 rounded-xl border border-dashed border-border text-center">
-          <p className="text-muted-foreground">No payment records yet.</p>
+      <div className="pay-hero">
+        <div>
+          <div className="lbl">Outstanding balance</div>
+          <div className="val">{money(outstanding)}</div>
+          <div className="sub">
+            {unpaid.length
+              ? `${unpaid.length} invoice${unpaid.length > 1 ? "s" : ""} due${nextDue ? ` · next ${day(nextDue.dueDate)}` : ""}`
+              : "Everything is settled — thank you."}
+          </div>
         </div>
-      ) : (
-        <>
-          {/* Summary */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="p-5 rounded-xl border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Total Paid</p>
-              <p className="text-xl font-bold text-green-600">{formatCurrency(String(totalPaid))}</p>
-            </div>
-            <div className="p-5 rounded-xl border border-border bg-card">
-              <p className="text-xs text-muted-foreground mb-1">Remaining</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(String(totalDue))}</p>
-            </div>
-          </div>
+        <div>
+          <a
+            href="mailto:contact@amfire.in?subject=Payment%20query"
+            style={{
+              display: "inline-block",
+              padding: "12px 22px",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--gradient-fire)",
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: "14px",
+              border: "none",
+              boxShadow: "var(--shadow-glow)",
+            }}
+          >
+            Contact accounts →
+          </a>
+        </div>
+      </div>
 
-          {/* Payment milestones */}
-          <div className="space-y-3">
-            {payments.map((p) => {
-              const config = statusConfig[p.status] || statusConfig.PENDING;
-              const Icon = config.icon;
-
-              return (
-                <div key={p.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${config.bg}`}>
-                    <Icon size={18} className={config.color} />
+      <div className="pay-grid">
+        {payments.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No invoices yet.</p>
+        ) : (
+          payments.map((p) => {
+            const due = p.status !== "PAID";
+            return (
+              <div className={`pcard${due ? " due" : ""}`} key={p.id}>
+                <div className="r">
+                  <div>
+                    <h4>{p.label}</h4>
+                    <div className="meta">{p.project?.name} · {p.percent}% of project</div>
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-foreground">{p.label}</p>
-                      <span className="text-xs text-muted-foreground">({p.percent}%)</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {p.status === "PAID" && p.paidDate
-                        ? `Paid on ${new Date(p.paidDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
-                        : p.dueDate
-                        ? `Due: ${new Date(p.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
-                        : p.status}
-                    </p>
-                  </div>
-
-                  <p className="text-sm font-bold text-foreground">{formatCurrency(p.amount)}</p>
-
-                  {p.invoiceUrl && (
-                    <a
-                      href={p.invoiceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
-                      title="Download Invoice"
-                    >
-                      <Download size={16} />
-                    </a>
-                  )}
+                  <span className={`chip ${p.status === "PAID" ? "chip-paid" : "chip-due"}`}>{p.status}</span>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+                <div className="amt">{money(Number(p.amount ?? 0))}</div>
+                <div className="f">
+                  <span>{p.status === "PAID" ? `Paid ${day(p.paidDate)}` : `Due ${day(p.dueDate)}`}</span>
+                  {p.invoiceUrl ? (
+                    <a href={p.invoiceUrl} target="_blank" rel="noreferrer" style={{ color: "var(--color-orange)", fontWeight: 600, fontSize: "12.5px" }}>
+                      Download →
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

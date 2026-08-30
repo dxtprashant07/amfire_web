@@ -1,46 +1,44 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, HelpCircle } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
 
-const labels: Record<string, string> = {
+const LABELS: Record<string, string> = {
   "/client": "Dashboard",
   "/client/project": "Project",
   "/client/payments": "Payments",
-  "/client/documents": "Documents",
-  "/client/feedback": "Feedback",
+  "/client/documents": "Files",
   "/client/support": "Support",
+  "/client/feedback": "Feedback",
+  "/client/settings": "Settings",
 };
 
 function currentLabel(pathname: string): string {
-  if (labels[pathname]) return labels[pathname];
-  const match = Object.keys(labels)
+  if (LABELS[pathname]) return LABELS[pathname];
+  const match = Object.keys(LABELS)
     .filter((href) => href !== "/client" && pathname.startsWith(href))
     .sort((a, b) => b.length - a.length)[0];
-  return match ? labels[match] : "Client Portal";
+  return match ? LABELS[match] : "Client Portal";
 }
 
 export function ClientTopbar() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   return (
-    <div className="sticky top-0 z-[5] flex items-center justify-between border-b border-[var(--border-default)] bg-[var(--surface-overlay)] px-8 py-4 backdrop-blur-[14px]">
-      <div className="flex items-center gap-2 text-[13px] text-[var(--fg-muted)]">
-        <b className="font-semibold text-[var(--fg-default)]">{currentLabel(pathname)}</b>
+    <div className="topbar">
+      <div className="crumbs">
+        <span>{user?.company || "amfire"}</span>
+        <span>›</span>
+        <b>{currentLabel(pathname)}</b>
       </div>
-      <div className="flex items-center gap-2.5">
-        <button
-          aria-label="Notifications"
-          className="grid h-9 w-9 place-items-center rounded-[9px] border border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--fg-muted)] transition-colors hover:text-[var(--color-orange)]"
-        >
-          <Bell size={17} />
-        </button>
-        <button
-          aria-label="Help"
-          className="grid h-9 w-9 place-items-center rounded-[9px] border border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--fg-muted)] transition-colors hover:text-[var(--color-orange)]"
-        >
-          <HelpCircle size={17} />
-        </button>
+      <div className="topbar-right">
+        <div className="tb-btn" title="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+        </div>
+        <a className="tb-btn" href="mailto:contact@amfire.in" title="Get help">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 17v.01" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /></svg>
+        </a>
       </div>
     </div>
   );

@@ -1,121 +1,110 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Save, Plus, Trash2, ChevronDown } from "lucide-react";
-import { contentRegistry, type ContentKey } from "@/content/registry";
-import { listFieldSpecs, heroFieldSpecs, type FieldSpec } from "@/content/field-specs";
-import { iconNames } from "@/content/icon-map";
-import { heroDefault } from "@/content/defaults";
+import { textDefaults } from "@/content/text-defaults";
 
-type Row = Record<string, unknown>;
+/** Group id → the page an editor recognises it by, in nav order. */
+const GROUPS: { key: string; label: string; hint: string }[] = [
+  { key: "nav", label: "Navigation", hint: "Menu links and the header call-to-action." },
+  { key: "home", label: "Home page", hint: "Hero, what we build, process, work, products, testimonials." },
+  { key: "services", label: "Services page", hint: "The six capability sections." },
+  { key: "products", label: "Products page", hint: "Product cards and their copy." },
+  { key: "work", label: "Work page", hint: "Case-study cards, filters, and stats." },
+  { key: "casestudy", label: "Case study", hint: "The Skillship deep-dive page." },
+  { key: "pricing", label: "Pricing page", hint: "Plans, features, payment milestones." },
+  { key: "about", label: "About page", hint: "Positioning, commitments, and stats." },
+  { key: "contact", label: "Contact page", hint: "Intro copy and the enquiry options." },
+  { key: "wizard", label: "Contact form", hint: "Step labels, fields, and confirmation copy." },
+  { key: "newsletter", label: "Newsletter", hint: "Footer signup states." },
+  { key: "footer", label: "Footer", hint: "Columns, links, and legal line." },
+  { key: "image", label: "Images", hint: "Paste a URL to swap any picture on the site." },
+];
 
-function FieldInput({ spec, value, onChange }: { spec: FieldSpec; value: unknown; onChange: (v: unknown) => void }) {
-  const base = "w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary";
+type Draft = Record<string, string>;
 
-  if (spec.type === "boolean") {
-    return (
-      <label className="flex items-center gap-2 text-sm text-foreground">
-        <input type="checkbox" checked={Boolean(value)} onChange={(e) => onChange(e.target.checked)} />
-        {spec.label}
-      </label>
-    );
-  }
-  if (spec.type === "icon") {
-    return (
-      <select className={base} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)}>
-        {iconNames.map((name) => (
-          <option key={name} value={name}>{name}</option>
-        ))}
-      </select>
-    );
-  }
-  if (spec.type === "textarea") {
-    return <textarea className={`${base} min-h-[72px] resize-y`} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
-  }
-  if (spec.type === "stringList") {
-    const text = Array.isArray(value) ? value.join("\n") : "";
-    return (
-      <textarea
-        className={`${base} min-h-[100px] resize-y`}
-        value={text}
-        onChange={(e) => onChange(e.target.value.split("\n").map((l) => l.trim()).filter(Boolean))}
-      />
-    );
-  }
-  if (spec.type === "number") {
-    return <input type="number" min={1} max={5} className={base} value={Number(value ?? 0)} onChange={(e) => onChange(Number(e.target.value))} />;
-  }
-  if (spec.type === "color") {
-    return <input type="text" placeholder="#F97316 or var(--color-orange)" className={base} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
-  }
-  return <input type="text" className={base} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
-}
+/** A page like Home has 300+ strings; render a slice and let the editor ask for more. */
+const PAGE_SIZE = 40;
 
-function ListEditor({ fields, rows, onChange }: { fields: FieldSpec[]; rows: Row[]; onChange: (rows: Row[]) => void }) {
-  function updateRow(i: number, key: string, v: unknown) {
-    const next = rows.slice();
-    next[i] = { ...next[i], [key]: v };
-    onChange(next);
-  }
-  function removeRow(i: number) {
-    onChange(rows.filter((_, idx) => idx !== i));
-  }
-  function addRow() {
-    const blank: Row = {};
-    for (const f of fields) blank[f.key] = f.type === "stringList" ? [] : f.type === "boolean" ? false : f.type === "number" ? 5 : "";
-    onChange([...rows, blank]);
-  }
-
-  return (
-    <div className="space-y-4">
-      {rows.map((row, i) => (
-        <div key={i} className="p-4 rounded-xl border border-border bg-background space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">Row {i + 1}</span>
-            <button onClick={() => removeRow(i)} className="text-muted-foreground hover:text-destructive" aria-label="Remove row">
-              <Trash2 size={15} />
-            </button>
-          </div>
-          {fields.map((f) => (
-            <div key={f.key}>
-              {f.type !== "boolean" ? <label className="block text-xs font-medium text-muted-foreground mb-1">{f.label}</label> : null}
-              <FieldInput spec={f} value={row[f.key]} onChange={(v) => updateRow(i, f.key, v)} />
-            </div>
-          ))}
-        </div>
-      ))}
-      <button onClick={addRow} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
-        <Plus size={15} /> Add row
-      </button>
-    </div>
-  );
-}
-
-function SectionEditor({ contentKey, initialValue }: { contentKey: ContentKey; initialValue: unknown }) {
-  const entry = contentRegistry[contentKey];
-  const [value, setValue] = useState<unknown>(initialValue);
+export default function AdminContentPage() {
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState<Draft>({});
+  const [group, setGroup] = useState("home");
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
+  useEffect(() => {
+    let cancelled = false;
+    authFetch("/api/admin/content")
+      .then((r) => (r.ok ? r.json() : { content: [] }))
+      .then((d) => {
+        if (cancelled) return;
+        const row = (d.content || []).find((c: { key: string }) => c.key === "site.text");
+        let overrides: Draft = {};
+        if (row) {
+          try {
+            const parsed = JSON.parse(row.value);
+            if (parsed && typeof parsed === "object") overrides = parsed as Draft;
+          } catch {
+            /* keep defaults */
+          }
+        }
+        setDraft({ ...textDefaults, ...overrides });
+      })
+      .catch(() => { if (!cancelled) setDraft({ ...textDefaults }); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Only strings the admin actually changed get persisted, so copy shipped in
+  // code later still shows through for everything they left alone.
+  const edited = useMemo(
+    () => Object.keys(draft).filter((id) => draft[id] !== textDefaults[id]),
+    [draft]
+  );
+
+  const idsByGroup = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const id of Object.keys(textDefaults)) {
+      const g = id.split(".")[0];
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(id);
+    }
+    return map;
+  }, []);
+
+  const q = query.trim().toLowerCase();
+  const searching = q.length > 0;
+
+  const visible = useMemo(() => {
+    const pool = searching ? Object.keys(textDefaults) : idsByGroup.get(group) ?? [];
+    if (!searching) return pool;
+    return pool.filter((id) => id.toLowerCase().includes(q) || (draft[id] ?? "").toLowerCase().includes(q));
+  }, [searching, q, group, idsByGroup, draft]);
+
   async function handleSave() {
     setSaving(true);
     setStatus("idle");
+    const overrides: Draft = {};
+    for (const id of edited) overrides[id] = draft[id];
+
     try {
       const res = await authFetch("/api/admin/content", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: contentKey, value: JSON.stringify(value) }),
+        body: JSON.stringify({ key: "site.text", value: JSON.stringify(overrides) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setErrorMsg(data.error || "Save failed.");
+        setErrorMsg(typeof data.error === "string" ? data.error : "Save failed.");
         setStatus("error");
       } else {
         setStatus("saved");
-        setTimeout(() => setStatus("idle"), 2000);
+        setTimeout(() => setStatus("idle"), 2500);
       }
     } catch {
       setErrorMsg("Network error.");
@@ -124,146 +113,138 @@ function SectionEditor({ contentKey, initialValue }: { contentKey: ContentKey; i
     setSaving(false);
   }
 
-  const isHero = contentKey === "home.hero";
-  const rows = !isHero ? ((value as Row[]) ?? []) : [];
-  const fields = listFieldSpecs[contentKey];
-
-  return (
-    <div className="p-5 rounded-2xl border border-border bg-card">
-      <div className="mb-4">
-        <h3 className="text-base font-bold text-foreground">{entry.label}</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">{entry.description}</p>
-      </div>
-
-      {isHero ? (
-        <div className="space-y-3">
-          {heroFieldSpecs.map((f) => (
-            <div key={f.key}>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">{f.label}</label>
-              <FieldInput
-                spec={f}
-                value={(value as typeof heroDefault)[f.key as keyof typeof heroDefault]}
-                onChange={(v) => setValue({ ...(value as object), [f.key]: v })}
-              />
-            </div>
-          ))}
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Proof stats</label>
-            <div className="grid grid-cols-2 gap-3">
-              {(value as typeof heroDefault).proof.map((p, i) => (
-                <div key={i} className="flex gap-2">
-                  <input
-                    className="w-20 px-2 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
-                    value={p.value}
-                    onChange={(e) => {
-                      const proof = (value as typeof heroDefault).proof.slice();
-                      proof[i] = { ...proof[i], value: e.target.value };
-                      setValue({ ...(value as object), proof });
-                    }}
-                  />
-                  <input
-                    className="flex-1 px-2 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
-                    value={p.label}
-                    onChange={(e) => {
-                      const proof = (value as typeof heroDefault).proof.slice();
-                      proof[i] = { ...proof[i], label: e.target.value };
-                      setValue({ ...(value as object), proof });
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : fields ? (
-        <ListEditor fields={fields} rows={rows} onChange={setValue} />
-      ) : null}
-
-      <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60"
-        >
-          {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={15} />}
-          Save section
-        </button>
-        {status === "saved" ? <span className="text-xs font-medium text-emerald-600">Saved — live within 5 minutes.</span> : null}
-        {status === "error" ? <span className="text-xs font-medium text-destructive">{errorMsg}</span> : null}
-      </div>
-    </div>
-  );
-}
-
-export default function AdminContentPage() {
-  const [loading, setLoading] = useState(true);
-  const [values, setValues] = useState<Partial<Record<ContentKey, unknown>>>({});
-  const [openKey, setOpenKey] = useState<ContentKey | null>(null);
-
-  useEffect(() => {
-    authFetch("/api/admin/content")
-      .then((r) => r.json())
-      .then((d) => {
-        const byKey = new Map<string, string>((d.content || []).map((c: { key: string; value: string }) => [c.key, c.value]));
-        const next: Partial<Record<ContentKey, unknown>> = {};
-        for (const key of Object.keys(contentRegistry) as ContentKey[]) {
-          const raw = byKey.get(key);
-          if (raw) {
-            try {
-              next[key] = JSON.parse(raw);
-              continue;
-            } catch {
-              /* fall through to default below */
-            }
-          }
-          next[key] = contentRegistry[key].default;
-        }
-        setValues(next);
-      })
-      .catch(() => {
-        const next: Partial<Record<ContentKey, unknown>> = {};
-        for (const key of Object.keys(contentRegistry) as ContentKey[]) next[key] = contentRegistry[key].default;
-        setValues(next);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  function resetOne(id: string) {
+    setDraft((d) => ({ ...d, [id]: textDefaults[id] }));
+  }
 
   if (loading) {
     return (
-      <div className="max-w-3xl space-y-4">
-        <Skeleton className="h-8 w-48" />
-        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+      <div className="page on space-y-4">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-96 rounded-2xl" />
       </div>
     );
   }
 
-  return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground mb-2">Content Manager</h1>
-      <p className="text-sm text-muted-foreground mb-8">
-        Edit homepage and pricing content directly — no code changes or redeploy needed. Changes appear on the live site within 5 minutes.
-      </p>
+  const active = GROUPS.find((g) => g.key === group) ?? GROUPS[0];
 
-      <div className="space-y-3">
-        {(Object.keys(contentRegistry) as ContentKey[]).map((key) => (
-          <div key={key}>
-            <button
-              onClick={() => setOpenKey(openKey === key ? null : key)}
-              className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-card text-left hover:border-primary/40 transition-colors"
-            >
-              <div>
-                <span className="text-sm font-semibold text-foreground">{contentRegistry[key].label}</span>
-                <p className="text-xs text-muted-foreground mt-0.5">{contentRegistry[key].description}</p>
+  return (
+    <div className="page on">
+      <h1 className="h1">Content</h1>
+      <p className="sub">Every word and image on the marketing site, editable here — no code change, no redeploy.</p>
+
+      <div className="grid-4">
+        <div className="kpi">
+          <div className="lbl">Editable strings</div>
+          <div className="val">{Object.keys(textDefaults).length}</div>
+        </div>
+        <div className="kpi">
+          <div className="lbl">Changed by you</div>
+          <div className="val">{edited.length}</div>
+          <div className="dta up">{edited.length ? "Unsaved changes included" : "Matching the shipped copy"}</div>
+        </div>
+        <div className="kpi">
+          <div className="lbl">Images</div>
+          <div className="val">{(idsByGroup.get("image") ?? []).length}</div>
+        </div>
+        <div className="kpi">
+          <div className="lbl">Goes live</div>
+          <div className="val" style={{ fontSize: "22px" }}>≤ 5 min</div>
+          <div className="dta up">Pages revalidate automatically</div>
+        </div>
+      </div>
+
+      <div className="filter-bar">
+        <input
+          className="search"
+          placeholder="Search across every page for the words you want to change…"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setLimit(PAGE_SIZE); }}
+        />
+        {status === "saved" ? <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-success)" }}>Saved.</span> : null}
+        {status === "error" ? <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-error)" }}>{errorMsg}</span> : null}
+        <button className="btn-pri" type="button" onClick={handleSave} disabled={saving || edited.length === 0}>
+          {saving ? "Saving…" : `Save${edited.length ? ` (${edited.length})` : ""}`}
+        </button>
+      </div>
+
+      <div className="ophub">
+        <div className="ocol">
+          {GROUPS.map((g) => {
+            const ids = idsByGroup.get(g.key) ?? [];
+            const changed = ids.filter((id) => draft[id] !== textDefaults[id]).length;
+            return (
+              <div
+                key={g.key}
+                className={`oc-item${!searching && group === g.key ? " on" : ""}`}
+                onClick={() => { setGroup(g.key); setQuery(""); setLimit(PAGE_SIZE); }}
+              >
+                {g.label}
+                <span className="cnt">{changed ? `${changed} ✎` : ids.length}</span>
               </div>
-              <ChevronDown size={16} className={`text-muted-foreground transition-transform shrink-0 ml-3 ${openKey === key ? "rotate-180" : ""}`} />
-            </button>
-            {openKey === key ? (
-              <div className="mt-2">
-                <SectionEditor contentKey={key} initialValue={values[key]} />
-              </div>
-            ) : null}
+            );
+          })}
+        </div>
+
+        <div className="opane">
+          <div className="opane-h">
+            <div>
+              <h2>{searching ? `Search results` : active.label}</h2>
+              <p>
+                {searching
+                  ? `${visible.length} match${visible.length === 1 ? "" : "es"} across all pages`
+                  : `${active.hint} · ${visible.length} field${visible.length === 1 ? "" : "s"}`}
+              </p>
+            </div>
           </div>
-        ))}
+
+          {visible.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Nothing matches that search.</p>
+          ) : (
+            visible.slice(0, limit).map((id) => {
+              const value = draft[id] ?? "";
+              const changed = value !== textDefaults[id];
+              const isImage = id.startsWith("image.") || id.includes(".img-");
+              const long = !isImage && value.length > 70;
+              return (
+                <div className="cfield" key={id}>
+                  <div className="cfield-h">
+                    <label htmlFor={`f-${id}`}>{id}</label>
+                    {changed ? (
+                      <button type="button" onClick={() => resetOne(id)}>Reset</button>
+                    ) : null}
+                  </div>
+                  {long ? (
+                    <textarea
+                      id={`f-${id}`}
+                      rows={3}
+                      value={value}
+                      onChange={(e) => setDraft({ ...draft, [id]: e.target.value })}
+                    />
+                  ) : (
+                    <input
+                      id={`f-${id}`}
+                      value={value}
+                      placeholder={isImage ? "https://… or /amfire-design/…" : undefined}
+                      onChange={(e) => setDraft({ ...draft, [id]: e.target.value })}
+                    />
+                  )}
+                  {isImage && value ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="cfield-preview" src={value} alt="" />
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+
+          {visible.length > limit ? (
+            <button className="cfield-more" type="button" onClick={() => setLimit(limit + PAGE_SIZE)}>
+              Show {Math.min(PAGE_SIZE, visible.length - limit)} more of {visible.length - limit} remaining
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

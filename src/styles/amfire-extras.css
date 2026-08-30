@@ -1,0 +1,506 @@
+/* Small additions on top of the verbatim design-system port: form controls the
+   static design mockup never needed, and the image placeholder that replaces
+   the design's <image-slot> authoring element. */
+
+.wizard .fin {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--fg-default);
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color var(--duration-base) ease;
+}
+.wizard .fin:focus {
+  border-color: var(--color-orange);
+  outline: none;
+}
+.wizard textarea.fin {
+  resize: vertical;
+  line-height: 1.55;
+}
+.wizard .fgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.wizard .opt {
+  user-select: none;
+}
+
+.img-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--fg-subtle);
+  font-size: 12px;
+  text-align: center;
+}
+.img-slot svg {
+  width: 26px;
+  height: 26px;
+}
+.img-slot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 620px) {
+  .wizard .fgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── UI-kit additions ────────────────────────────────────────────────
+   The admin and client-portal kits are desktop-only mockups with no form
+   controls of their own. These fill the gaps the real app needs, in the
+   kits' own visual language. */
+
+.ui-portal .ticket-form,
+.ui-admin .ticket-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+}
+.ui-portal .ticket-form input,
+.ui-portal .ticket-form textarea,
+.ui-portal .ticket-form select,
+.ui-admin .ticket-form input,
+.ui-admin .ticket-form textarea,
+.ui-admin .ticket-form select {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 11px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--fg-default);
+  outline: none;
+}
+.ui-portal .ticket-form input:focus,
+.ui-portal .ticket-form textarea:focus,
+.ui-admin .ticket-form input:focus,
+.ui-admin .ticket-form textarea:focus {
+  border-color: var(--color-orange);
+}
+
+.ui-portal .proj-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.ui-portal .proj-switch button {
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.ui-portal .proj-switch button.on {
+  background: var(--gradient-fire);
+  border-color: transparent;
+  color: #fff;
+}
+
+.ui-portal .mile-desc {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  line-height: 1.55;
+}
+
+.ui-portal .set-row input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* The kits ship no breakpoints; the real app still has to work on a phone. */
+@media (max-width: 900px) {
+  .ui-portal .app,
+  .ui-admin .app {
+    grid-template-columns: 1fr;
+  }
+  .ui-portal .side,
+  .ui-admin .side {
+    display: none;
+  }
+  .ui-portal .content,
+  .ui-admin .content {
+    padding: 20px 16px 88px;
+  }
+  .ui-portal .topbar,
+  .ui-admin .topbar {
+    padding: 14px 16px;
+  }
+  .ui-portal .search,
+  .ui-admin .search {
+    display: none;
+  }
+  .ui-portal .grid-3,
+  .ui-portal .grid-hero,
+  .ui-portal .pay-grid,
+  .ui-portal .set-grid,
+  .ui-admin .grid-4,
+  .ui-admin .two-col,
+  .ui-admin .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .ui-admin .kanban {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Kit styles .btn-pri only inside .filter-bar; the real pages use it elsewhere. */
+.ui-admin .btn-pri {
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-fire);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-glow-sm);
+}
+.ui-admin .btn-ghost {
+  padding: 9px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-default);
+  cursor: pointer;
+}
+
+.ui-admin .lead-detail {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  font-size: 13.5px;
+}
+.ui-admin .lead-detail .lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin: 14px 0 4px;
+}
+.ui-admin .lead-detail p {
+  color: var(--fg-default);
+  line-height: 1.55;
+}
+.ui-admin .lead-detail select,
+.ui-admin .lead-detail textarea,
+.ui-admin .form-grid input,
+.ui-admin .form-grid select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--fg-default);
+  outline: none;
+  margin-bottom: 12px;
+}
+.ui-admin .lead-detail textarea:focus,
+.ui-admin .lead-detail select:focus {
+  border-color: var(--color-orange);
+}
+
+.ui-admin .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+
+@media (max-width: 900px) {
+  .ui-admin .lead-detail,
+  .ui-admin .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Portal entry point. The standalone design has no login link, so this
+   borrows the nav link's own type and hover underline. */
+.nlinks .nav-login {
+  position: relative;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: var(--fg-default);
+  padding: 6px 0;
+  transition: color .16s ease;
+}
+.nlinks .nav-login::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: var(--color-orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .2s var(--ease-standard);
+}
+.nlinks .nav-login:hover {
+  color: var(--color-orange);
+}
+.nlinks .nav-login:hover::after {
+  transform: scaleX(1);
+}
+
+/* Content editor fields — the kit has no form rows, so these follow the
+   Workspace pane's type and spacing. */
+.ui-admin .cfield {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ui-admin .cfield:last-child {
+  border-bottom: none;
+}
+.ui-admin .cfield-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.ui-admin .cfield-h label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--fg-subtle);
+  word-break: break-all;
+}
+.ui-admin .cfield-h button {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-orange);
+  cursor: pointer;
+}
+.ui-admin .cfield input,
+.ui-admin .cfield textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--fg-default);
+  outline: none;
+  resize: vertical;
+  transition: border-color var(--duration-base) ease;
+}
+.ui-admin .cfield input:focus,
+.ui-admin .cfield textarea:focus {
+  border-color: var(--color-orange);
+}
+.ui-admin .cfield-preview {
+  margin-top: 8px;
+  max-height: 88px;
+  width: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+}
+.ui-admin .filter-bar .search {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .ui-admin .ophub {
+    grid-template-columns: 1fr;
+  }
+  .ui-admin .ocol {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .ui-admin .oc-item {
+    white-space: nowrap;
+  }
+}
+.ui-admin .cfield-more {
+  margin-top: 16px;
+  width: 100%;
+  padding: 11px;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.ui-admin .cfield-more:hover {
+  border-color: var(--color-orange);
+  color: var(--color-orange);
+}
+
+/* Project detail — labelled fields, in-cell selects, and destructive actions.
+   None of these exist in the kit, which only ever showed read-only tables. */
+.ui-admin .crumb-back {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-bottom: 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.ui-admin .crumb-back:hover {
+  color: var(--color-orange);
+}
+.ui-admin .fl {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.ui-admin .fl select,
+.ui-admin .fl input,
+.ui-admin .fl textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--fg-default);
+  outline: none;
+  resize: vertical;
+}
+.ui-admin .fl select:focus,
+.ui-admin .fl input:focus,
+.ui-admin .fl textarea:focus {
+  border-color: var(--color-orange);
+}
+.ui-admin .panel-h .ct {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+.ui-admin .cell-select {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 100px;
+  background: var(--surface-card);
+  color: var(--fg-default);
+  outline: none;
+  cursor: pointer;
+}
+.ui-admin .cell-select:focus {
+  border-color: var(--color-orange);
+}
+.ui-admin .btn-danger {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.ui-admin .btn-danger:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+.ui-admin .empty {
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.ui-admin .panel + .panel {
+  margin-top: 24px;
+}
+
+/* Star rating — the portal kit has no rating control. */
+.ui-portal .stars-pick {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ui-portal .stars-pick button {
+  border: none;
+  background: none;
+  padding: 0 2px;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--border-default);
+  cursor: pointer;
+  transition: color var(--duration-fast) ease, transform var(--duration-fast) ease;
+}
+.ui-portal .stars-pick button.on {
+  color: var(--color-orange);
+}
+.ui-portal .stars-pick button:active {
+  transform: scale(.9);
+}
+.ui-portal .stars-hint {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.ui-portal .stars-read {
+  letter-spacing: 1px;
+  font-size: 14px;
+  color: var(--border-default);
+}
+.ui-portal .stars-read .on {
+  color: var(--color-orange);
+}

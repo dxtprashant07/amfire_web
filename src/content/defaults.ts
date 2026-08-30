@@ -96,6 +96,7 @@ export const productsDefault: Products = [
     accent: "#4F46E5",
     name: "SkillShip",
     text: "AI-powered learning and placement guidance platform for students.",
+    href: "https://skillship.in",
   },
   {
     icon: "Bot",
@@ -105,6 +106,7 @@ export const productsDefault: Products = [
     name: "AI Career Copilot",
     text: "Bilingual career guidance AI that helps students discover paths, prepare, and succeed.",
     featured: true,
+    href: "/products",
   },
   {
     icon: "HomeIcon",
@@ -113,6 +115,16 @@ export const productsDefault: Products = [
     accent: "#16A34A",
     name: "MyGreenHome",
     text: "Smart solutions for energy efficiency, sustainability, and greener living.",
+    href: "https://mygreenhome.in",
+  },
+  {
+    icon: "Code2",
+    iconBg: "#FFF1E9",
+    iconColor: "var(--color-orange)",
+    accent: "var(--color-orange)",
+    name: "Substrate",
+    text: "21 free browser-based tools — image, PDF, text, and dev utilities that run 100% client-side. No uploads, no accounts.",
+    href: "https://www.subtrate.com",
   },
 ];
 

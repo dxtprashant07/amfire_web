@@ -14,11 +14,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <QueryProvider>
       <AuthProvider>
-        <div className="flex min-h-screen">
-          <ClientSidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <ClientTopbar />
-            <main className="mx-auto w-full max-w-[1200px] flex-1 p-8 pb-20 md:pb-8">{children}</main>
+        {/* .ui-portal scopes the client-portal UI kit's stylesheet. */}
+        <div className="ui-portal">
+          <div className="app">
+            <ClientSidebar />
+            <div className="main">
+              <ClientTopbar />
+              <div className="content">{children}</div>
+            </div>
           </div>
         </div>
         <ClientMobileNav />

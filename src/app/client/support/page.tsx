@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Send, AlertCircle, Clock, CheckCircle2, XCircle } from "lucide-react";
 
 interface Ticket {
   id: string;
@@ -20,10 +19,17 @@ interface ProjectOption {
   name: string;
 }
 
+const STATUS_COLOR: Record<string, string> = {
+  OPEN: "var(--color-orange)",
+  IN_PROGRESS: "var(--color-orange)",
+  RESOLVED: "var(--color-success)",
+  CLOSED: "var(--fg-muted)",
+};
+
 export default function ClientSupportPage() {
   const queryClient = useQueryClient();
 
-  const { data: supportData, isLoading: loading, error: loadError } = useQuery({
+  const { data, isLoading, error: loadError } = useQuery({
     queryKey: ["client-support-data"],
     queryFn: async () => {
       const [tkRes, pjRes] = await Promise.all([
@@ -37,26 +43,23 @@ export default function ClientSupportPage() {
     },
   });
 
-  const tickets = supportData?.tickets || [];
-  const projects = supportData?.projects || [];
+  const tickets = data?.tickets ?? [];
+  const projects = data?.projects ?? [];
 
-  // Form state
-  const [selectedProject, setSelectedProject] = useState("");
+  const [open, setOpen] = useState(false);
+  const [projectId, setProjectId] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Set default project when data loads
-  if (projects.length > 0 && !selectedProject) {
-    setSelectedProject(projects[0].id);
-  }
+  const selectedProject = projectId || projects[0]?.id || "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedProject || !subject.trim() || message.length < 10) {
-      setError("Please fill in all fields (message min 10 chars).");
+    if (!selectedProject || !subject.trim() || message.trim().length < 10) {
+      setError("Pick a project, add a subject, and describe the issue (min 10 characters).");
       return;
     }
 
@@ -70,17 +73,16 @@ export default function ClientSupportPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: selectedProject, subject, message }),
       });
-
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Failed to submit.");
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || "Failed to submit.");
         setSubmitting(false);
         return;
       }
-
       setSubject("");
       setMessage("");
-      setSuccess("Ticket submitted. We'll respond within 24 hours.");
+      setOpen(false);
+      setSuccess("Ticket submitted — we reply within 4 business hours.");
       queryClient.invalidateQueries({ queryKey: ["client-support-data"] });
     } catch {
       setError("Network error.");
@@ -88,124 +90,107 @@ export default function ClientSupportPage() {
     setSubmitting(false);
   }
 
-  const statusConfig: Record<string, { icon: typeof AlertCircle; color: string }> = {
-    OPEN: { icon: AlertCircle, color: "text-yellow-600" },
-    IN_PROGRESS: { icon: Clock, color: "text-primary" },
-    RESOLVED: { icon: CheckCircle2, color: "text-green-600" },
-    CLOSED: { icon: XCircle, color: "text-muted-foreground" },
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="max-w-3xl space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-56 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
+      <div className="page on">
+        <Skeleton className="h-10 w-48 mb-6" />
+        <Skeleton className="h-64 rounded-2xl" />
       </div>
     );
   }
 
-  if (loadError) {
-    return (
-      <div className="max-w-3xl p-6 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
-        <AlertCircle size={32} className="mx-auto mb-3 text-destructive" />
-        <p className="text-sm text-destructive font-medium">Failed to load support data.</p>
-      </div>
-    );
-  }
+  const openCount = tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
+  const resolved = tickets.filter((t) => t.status === "RESOLVED" || t.status === "CLOSED").length;
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground mb-6">Support</h1>
+    <div className="page on">
+      <div className="welcome">
+        <h1>Support</h1>
+        <p>Report issues, request tweaks, and track resolution — SLA replies within 4 business hours.</p>
+      </div>
 
-      {/* New ticket form */}
-      {projects.length > 0 && (
-        <form onSubmit={handleSubmit} className="p-6 rounded-xl border border-border bg-card mb-8">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Raise a support ticket</h2>
+      <div className="grid-3" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: "20px" }}>
+        <div className="kpi"><div className="top"><span className="lbl">Open tickets</span></div><div className="val">{openCount}</div></div>
+        <div className="kpi"><div className="top"><span className="lbl">Resolved</span></div><div className="val">{resolved}</div></div>
+      </div>
 
-          {projects.length > 1 && (
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full mb-3 px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary"
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          )}
-
-          <input
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Subject"
-            className="w-full mb-3 px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary"
-          />
-
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Describe the issue..."
-            rows={4}
-            className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary resize-none mb-4"
-          />
-
-          {error && <p className="text-xs text-destructive mb-3">{error}</p>}
-          {success && <p className="text-xs text-green-600 mb-3">{success}</p>}
-
+      <div className="panel">
+        <div className="panel-h">
+          <h2>All tickets</h2>
           <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60"
+            type="button"
+            onClick={() => { setOpen(!open); setSuccess(""); setError(""); }}
+            style={{
+              padding: "9px 16px",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--gradient-fire)",
+              color: "#fff",
+              border: "none",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "var(--shadow-glow-sm)",
+            }}
           >
-            {submitting ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Send size={14} /> Submit Ticket
-              </>
-            )}
+            {open ? "Cancel" : "+ New ticket"}
           </button>
-        </form>
-      )}
-
-      {/* Tickets list */}
-      {tickets.length > 0 && (
-        <>
-          <h2 className="text-sm font-semibold text-foreground mb-4">Your tickets</h2>
-          <div className="space-y-3">
-            {tickets.map((t) => {
-              const config = statusConfig[t.status] || statusConfig.OPEN;
-              const Icon = config.icon;
-              return (
-                <div key={t.id} className="p-4 rounded-xl border border-border bg-card">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2">
-                      <Icon size={16} className={config.color} />
-                      <p className="text-sm font-medium text-foreground">{t.subject}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{t.message}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs text-muted-foreground">{t.project.name}</span>
-                    <span className="text-xs font-medium text-muted-foreground">· {t.status.replace("_", " ")}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {tickets.length === 0 && projects.length === 0 && (
-        <div className="p-8 rounded-xl border border-dashed border-border text-center">
-          <p className="text-muted-foreground">No active projects. Support is available once your project starts.</p>
         </div>
-      )}
+
+        {success ? <p style={{ fontSize: "13px", color: "var(--color-success)", marginBottom: "14px" }}>{success}</p> : null}
+
+        {open ? (
+          <form onSubmit={handleSubmit} className="ticket-form">
+            <select value={selectedProject} onChange={(e) => setProjectId(e.target.value)}>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <input placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+            <textarea rows={4} placeholder="What's happening? Include links or steps if you can." value={message} onChange={(e) => setMessage(e.target.value)} />
+            {error ? <p style={{ fontSize: "12.5px", color: "var(--color-error)" }}>{error}</p> : null}
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                alignSelf: "flex-start",
+                padding: "10px 20px",
+                borderRadius: "var(--radius-sm)",
+                background: "var(--gradient-fire)",
+                color: "#fff",
+                border: "none",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {submitting ? "Submitting…" : "Submit ticket"}
+            </button>
+          </form>
+        ) : null}
+
+        {loadError ? (
+          <p style={{ fontSize: "13px", color: "var(--color-error)" }}>Failed to load tickets. Please refresh.</p>
+        ) : tickets.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No tickets yet.</p>
+        ) : (
+          tickets.map((t) => (
+            <div className="ticket" key={t.id}>
+              <div className="th">
+                <div className="tt">
+                  <span className="d" style={{ background: STATUS_COLOR[t.status] ?? "var(--fg-muted)" }}></span>
+                  <p>{t.subject}</p>
+                </div>
+                <span style={{ fontSize: "11px", color: "var(--fg-muted)" }}>
+                  {new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </span>
+              </div>
+              <p className="desc">{t.message}</p>
+              <div className="tf">
+                <span>{t.project?.name}</span>
+                <b style={{ color: STATUS_COLOR[t.status] ?? "var(--fg-muted)" }}>· {t.status.replace("_", " ")}</b>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

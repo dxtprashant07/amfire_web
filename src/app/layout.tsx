@@ -11,8 +11,8 @@ export const metadata: Metadata = {
     "amfire builds end-to-end digital products — web apps, mobile apps, AI agents, and automation. Complete software. Real intelligence.",
   keywords: ["web development", "mobile apps", "AI agents", "automation", "software company", "India"],
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
     apple: "/logo.png",
   },
   openGraph: {

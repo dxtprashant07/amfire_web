@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "@/stores/auth-store";
-import {
-  HeadphonesIcon, AlertCircle, CheckCircle2, Clock, XCircle,
-  MessageSquare, User as UserIcon,
-} from "lucide-react";
-import { Panel, Chip, EmptyState } from "@/components/admin/ui";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Ticket {
   id: string;
@@ -20,35 +17,25 @@ interface Ticket {
 
 const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 
-const statusConfig: Record<string, { icon: typeof Clock; tone: "info" | "warning" | "success" | "neutral" }> = {
-  OPEN: { icon: AlertCircle, tone: "info" },
-  IN_PROGRESS: { icon: Clock, tone: "warning" },
-  RESOLVED: { icon: CheckCircle2, tone: "success" },
-  CLOSED: { icon: XCircle, tone: "neutral" },
-};
-const toneIconBg: Record<string, string> = {
-  info: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
-  warning: "bg-[var(--accent-tint)] text-[var(--color-orange)]",
-  success: "bg-[var(--color-success-bg)] text-[var(--color-success)]",
-  neutral: "bg-[var(--surface-sunken)] text-[var(--fg-muted)]",
+const STATUS_CHIP: Record<string, string> = {
+  OPEN: "chip-review",
+  IN_PROGRESS: "chip-planning",
+  RESOLVED: "chip-active",
+  CLOSED: "chip-blocked",
 };
 
 export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  async function fetchTickets() {
-    setLoading(true);
-    const res = await authFetch("/api/admin/support");
-    if (res.ok) {
+  const { data: tickets = [], isLoading: loading, refetch } = useQuery({
+    queryKey: ["admin-tickets"],
+    queryFn: async () => {
+      const res = await authFetch("/api/admin/support");
+      if (!res.ok) throw new Error("Failed to load tickets");
       const d = await res.json();
-      setTickets(d.tickets || []);
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => { fetchTickets(); }, []);
+      return (d.tickets || []) as Ticket[];
+    },
+  });
 
   async function updateStatus(id: string, status: string) {
     await authFetch("/api/admin/support", {
@@ -56,80 +43,73 @@ export default function AdminSupportPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status }),
     });
-    fetchTickets();
+    refetch();
   }
 
-  const openCount = tickets.filter((t) => t.status === "OPEN").length;
+  const count = (s: string) => tickets.filter((t) => t.status === s).length;
+  const open = tickets.find((t) => t.id === openId) ?? null;
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Support Tickets</h1>
-        <p className="mt-1 text-[14.5px] text-[var(--fg-muted)]">
-          {tickets.length} total · {openCount} open
-        </p>
+    <div className="page on">
+      <h1 className="h1">Support inbox</h1>
+      <p className="sub">{count("OPEN")} open across all clients · {tickets.length} total.</p>
+
+      <div className="grid-4">
+        <div className="kpi"><div className="lbl">Open</div><div className="val">{count("OPEN")}</div></div>
+        <div className="kpi"><div className="lbl">In progress</div><div className="val">{count("IN_PROGRESS")}</div></div>
+        <div className="kpi"><div className="lbl">Resolved</div><div className="val">{count("RESOLVED")}</div></div>
+        <div className="kpi"><div className="lbl">Closed</div><div className="val">{count("CLOSED")}</div></div>
       </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />)}
+      {open ? (
+        <div className="panel" style={{ marginBottom: "24px" }}>
+          <div className="panel-h">
+            <h2>{open.subject}</h2>
+            <button className="btn-ghost" type="button" onClick={() => setOpenId(null)}>Close</button>
+          </div>
+          <div className="lead-detail">
+            <div>
+              <div className="lbl">From</div>
+              <p>{open.user?.name} · {open.user?.email}</p>
+              <div className="lbl">Project</div>
+              <p>{open.project?.name}</p>
+              <div className="lbl">Message</div>
+              <p>{open.message}</p>
+            </div>
+            <div>
+              <div className="lbl">Status</div>
+              <select value={open.status} onChange={(e) => updateStatus(open.id, e.target.value)}>
+                {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
-      ) : tickets.length === 0 ? (
-        <Panel>
-          <EmptyState icon={<HeadphonesIcon size={32} className="text-[var(--fg-subtle)]" />} text="No support tickets yet." />
-        </Panel>
-      ) : (
-        <div className="space-y-2">
-          {tickets.map((t) => {
-            const cfg = statusConfig[t.status] || statusConfig.OPEN;
-            const Icon = cfg.icon;
-            const expanded = expandedId === t.id;
+      ) : null}
 
-            return (
-              <div key={t.id} className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[var(--shadow-sm)]">
-                <button
-                  onClick={() => setExpandedId(expanded ? null : t.id)}
-                  className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-[var(--surface-sunken)]"
-                >
-                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-[9px] ${toneIconBg[cfg.tone]}`}>
-                    <Icon size={16} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13.5px] font-bold text-[var(--fg-default)]">{t.subject}</p>
-                    <p className="flex items-center gap-2 text-xs text-[var(--fg-muted)]">
-                      <UserIcon size={10} /> {t.user.name} · {t.project.name} · {new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </p>
-                  </div>
-                  <Chip tone={cfg.tone}>{t.status.replace("_", " ")}</Chip>
-                </button>
-
-                {expanded && (
-                  <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1"><MessageSquare size={12} /> Message</p>
-                      <p className="text-sm text-foreground bg-secondary/30 p-3 rounded-lg">{t.message}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs font-medium text-muted-foreground">Update Status:</label>
-                      <select
-                        value={t.status}
-                        onChange={(e) => updateStatus(t.id, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      >
-                        {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                      </select>
-                      <a href={`mailto:${t.user.email}?subject=Re: ${t.subject}`}
-                        className="ml-auto px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                        Reply via Email
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <div className="panel">
+        {loading ? (
+          <Skeleton className="h-48 rounded-xl" />
+        ) : tickets.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No tickets yet.</p>
+        ) : (
+          <table className="tbl">
+            <thead>
+              <tr><th>Ticket</th><th>Client</th><th>Project</th><th>Opened</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {tickets.map((t) => (
+                <tr key={t.id} onClick={() => setOpenId(t.id === openId ? null : t.id)} style={{ cursor: "pointer" }}>
+                  <td><b style={{ fontWeight: 700 }}>{t.subject}</b></td>
+                  <td>{t.user?.name}</td>
+                  <td>{t.project?.name}</td>
+                  <td>{new Date(t.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</td>
+                  <td><span className={`chip ${STATUS_CHIP[t.status] ?? "chip-planning"}`}>{t.status.replace("_", " ")}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

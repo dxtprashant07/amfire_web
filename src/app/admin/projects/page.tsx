@@ -1,20 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { authFetch } from "@/stores/auth-store";
-import {
-  Plus,
-  FolderKanban,
-  ArrowRight,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Pause,
-  XCircle,
-  Search,
-} from "lucide-react";
-import { Panel, Chip, EmptyState } from "@/components/admin/ui";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Client {
   id: string;
@@ -37,28 +27,43 @@ interface Project {
   payments: { status: string; amount: string }[];
 }
 
-const statusConfig: Record<string, { icon: typeof Clock; tone: "info" | "warning" | "success" | "error" }> = {
-  DISCOVERY: { icon: Search, tone: "info" },
-  IN_PROGRESS: { icon: Clock, tone: "warning" },
-  ON_HOLD: { icon: Pause, tone: "warning" },
-  COMPLETED: { icon: CheckCircle2, tone: "success" },
-  CANCELLED: { icon: XCircle, tone: "error" },
-};
-const toneIconBg: Record<string, string> = {
-  info: "bg-[var(--color-info-bg)] text-[var(--color-info)]",
-  warning: "bg-[var(--accent-tint)] text-[var(--color-orange)]",
-  success: "bg-[var(--color-success-bg)] text-[var(--color-success)]",
-  error: "bg-[var(--color-error-bg)] text-[var(--color-error)]",
+const STATUS_CHIP: Record<string, string> = {
+  DISCOVERY: "chip-planning",
+  IN_PROGRESS: "chip-active",
+  ON_HOLD: "chip-review",
+  COMPLETED: "chip-active",
+  CANCELLED: "chip-blocked",
 };
 
+const money = (v: string | number | null) => (v ? `₹${Number(v).toLocaleString("en-IN")}` : "—");
+
+function progressOf(p: Project) {
+  if (!p.milestones.length) return 0;
+  return Math.round((p.milestones.filter((m) => m.status === "COMPLETED").length / p.milestones.length) * 100);
+}
+
 export default function AdminProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, refetch } = useQuery({
+    queryKey: ["admin-projects"],
+    queryFn: async () => {
+      const [projRes, usersRes] = await Promise.all([
+        authFetch("/api/admin/projects"),
+        authFetch("/api/admin/users"),
+      ]);
+      const projects = projRes.ok ? (((await projRes.json()).projects || []) as Project[]) : [];
+      const users = usersRes.ok ? await usersRes.json() : { users: [] };
+      const list = (Array.isArray(users) ? users : users.users ?? []) as (Client & { role: string })[];
+      return { projects, clients: list.filter((u) => u.role === "CLIENT") };
+    },
+  });
+  const projects = data?.projects ?? [];
+  const clients = data?.clients ?? [];
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -69,25 +74,6 @@ export default function AdminProjectsPage() {
     endDate: "",
     totalValue: "",
   });
-
-  async function fetchData() {
-    setLoading(true);
-    const [projRes, usersRes] = await Promise.all([
-      authFetch("/api/admin/projects"),
-      authFetch("/api/admin/users"),
-    ]);
-    if (projRes.ok) {
-      const d = await projRes.json();
-      setProjects(d.projects || []);
-    }
-    if (usersRes.ok) {
-      const users = await usersRes.json();
-      setClients(users.filter((u: { role: string }) => u.role === "CLIENT"));
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => { fetchData(); }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -110,177 +96,117 @@ export default function AdminProjectsPage() {
     });
 
     if (res.ok) {
-      setSuccess("Project created successfully");
+      setSuccess("Project created.");
       setForm({ name: "", description: "", clientId: "", status: "DISCOVERY", startDate: "", endDate: "", totalValue: "" });
       setShowForm(false);
-      fetchData();
+      refetch();
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setError(typeof data.error === "string" ? data.error : "Failed to create project");
     }
     setSubmitting(false);
   }
 
+  const visible = projects.filter((p) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery = !q || p.name.toLowerCase().includes(q) || (p.client?.company ?? p.client?.name ?? "").toLowerCase().includes(q);
+    return matchesQuery && (!statusFilter || p.status === statusFilter);
+  });
+
+  const inFlight = projects
+    .filter((p) => p.status === "DISCOVERY" || p.status === "IN_PROGRESS")
+    .reduce((sum, p) => sum + Number(p.totalValue ?? 0), 0);
+
   return (
-    <div className="max-w-5xl">
-      <div className="mb-7 flex items-center justify-between">
-        <div>
-          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Projects</h1>
-          <p className="mt-1 text-[14.5px] text-[var(--fg-muted)]">Manage client projects, milestones, payments & documents</p>
-        </div>
-        <button
-          onClick={() => { setShowForm(!showForm); setError(""); setSuccess(""); }}
-          className="amfire-primary inline-flex items-center gap-2 rounded-[9px] px-4 py-2.5 text-sm font-bold transition-all"
-        >
-          <Plus size={16} /> New Project
+    <div className="page on">
+      <h1 className="h1">Projects</h1>
+      <p className="sub">
+        {projects.length} engagement{projects.length === 1 ? "" : "s"}
+        {inFlight ? ` · ${money(inFlight)} in-flight value` : ""}
+      </p>
+
+      <div className="filter-bar">
+        <input className="search" placeholder="Search projects, clients…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">All statuses</option>
+          <option value="DISCOVERY">Discovery</option>
+          <option value="IN_PROGRESS">In progress</option>
+          <option value="ON_HOLD">On hold</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+        <button className="btn-pri" type="button" onClick={() => { setShowForm(!showForm); setSuccess(""); setError(""); }}>
+          {showForm ? "Cancel" : "+ New project"}
         </button>
       </div>
 
-      {success && (
-        <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 text-sm">
-          <CheckCircle2 size={16} /> {success}
-        </div>
-      )}
-      {error && (
-        <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-destructive/10 text-destructive text-sm">
-          <AlertCircle size={16} /> {error}
-        </div>
-      )}
+      {success ? <p style={{ fontSize: "13px", color: "var(--color-success)", marginBottom: "12px" }}>{success}</p> : null}
 
-      {/* Create Project Form */}
-      {showForm && (
-        <form onSubmit={handleSubmit} className="p-6 mb-8 rounded-xl border border-border bg-card space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Create New Project</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Project Name *</label>
-              <input
-                type="text" required value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="E-commerce Platform Redesign"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Assign to Client *</label>
-              <select
-                required value={form.clientId}
-                onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">Select client...</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name} {c.company ? `(${c.company})` : ""} — {c.email}</option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                rows={2} placeholder="Brief project description"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="DISCOVERY">Discovery</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="ON_HOLD">On Hold</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Total Value (₹)</label>
-              <input
-                type="number" value={form.totalValue}
-                onChange={(e) => setForm({ ...form, totalValue: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="300000"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Start Date</label>
-              <input
-                type="date" value={form.startDate}
-                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">End Date</label>
-              <input
-                type="date" value={form.endDate}
-                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-3 pt-2">
-            <button type="submit" disabled={submitting}
-              className="px-5 py-2 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all">
-              {submitting ? "Creating..." : "Create Project"}
+      {showForm ? (
+        <div className="panel" style={{ marginBottom: "24px" }}>
+          <div className="panel-h"><h2>New project</h2></div>
+          <form className="ticket-form" onSubmit={handleSubmit}>
+            <input placeholder="Project name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            <select value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })} required>
+              <option value="">Select client…</option>
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.company ? `${c.name} · ${c.company}` : c.name}</option>)}
+            </select>
+            <textarea rows={3} placeholder="Short description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <option value="DISCOVERY">Discovery</option>
+              <option value="IN_PROGRESS">In progress</option>
+              <option value="ON_HOLD">On hold</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+            <input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
+            <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+            <input type="number" placeholder="Total value (₹)" value={form.totalValue} onChange={(e) => setForm({ ...form, totalValue: e.target.value })} />
+            {error ? <p style={{ fontSize: "12.5px", color: "var(--color-error)" }}>{error}</p> : null}
+            <button className="btn-pri" type="submit" disabled={submitting} style={{ alignSelf: "flex-start" }}>
+              {submitting ? "Creating…" : "Create project"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)}
-              className="px-5 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Projects list */}
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-24 rounded-xl bg-secondary animate-pulse" />)}
+          </form>
         </div>
-      ) : projects.length === 0 ? (
-        <Panel>
-          <EmptyState icon={<FolderKanban size={32} className="text-[var(--fg-subtle)]" />} text='No projects yet. Click "New Project" to create one.' />
-        </Panel>
-      ) : (
-        <div className="space-y-3">
-          {projects.map((p) => {
-            const cfg = statusConfig[p.status] || statusConfig.DISCOVERY;
-            const Icon = cfg.icon;
-            const done = p.milestones.filter((m) => m.status === "COMPLETED").length;
-            const total = p.milestones.length;
-            const paid = p.payments.filter((pm) => pm.status === "PAID").reduce((s, pm) => s + Number(pm.amount), 0);
-            const totalAmt = p.payments.reduce((s, pm) => s + Number(pm.amount), 0);
+      ) : null}
 
-            return (
-              <Link
-                key={p.id}
-                href={`/admin/projects/${p.id}`}
-                className="group flex items-center gap-4 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-5 shadow-[var(--shadow-sm)] transition-all hover:border-[var(--color-orange)] hover:shadow-[var(--shadow-md)]"
-              >
-                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-[9px] ${toneIconBg[cfg.tone]}`}>
-                  <Icon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <p className="truncate text-[13.5px] font-bold text-[var(--fg-default)] transition-colors group-hover:text-[var(--color-orange)]">
-                      {p.name}
-                    </p>
-                    <Chip tone={cfg.tone}>{p.status.replace("_", " ")}</Chip>
-                  </div>
-                  <p className="text-xs text-[var(--fg-muted)]">
-                    {p.client.name} {p.client.company ? `· ${p.client.company}` : ""}
-                    {total > 0 && ` · ${done}/${total} milestones`}
-                    {totalAmt > 0 && ` · ₹${paid.toLocaleString("en-IN")} / ₹${totalAmt.toLocaleString("en-IN")} paid`}
-                  </p>
-                </div>
-                <ArrowRight size={16} className="shrink-0 text-[var(--fg-muted)] transition-colors group-hover:text-[var(--color-orange)]" />
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <div className="panel">
+        {loading ? (
+          <Skeleton className="h-48 rounded-xl" />
+        ) : visible.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No projects match this filter.</p>
+        ) : (
+          <table className="tbl">
+            <thead>
+              <tr><th>Project</th><th>Client</th><th>Progress</th><th>Value</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              {visible.map((p) => {
+                const progress = progressOf(p);
+                return (
+                  <tr key={p.id}>
+                    <td>
+                      <b style={{ fontWeight: 700 }}>{p.name}</b>
+                      {p.description ? <div style={{ fontSize: "11.5px", color: "var(--fg-muted)" }}>{p.description}</div> : null}
+                    </td>
+                    <td>{p.client?.company || p.client?.name || "—"}</td>
+                    <td>
+                      <div className="pr">
+                        <div className="bar"><i style={{ width: `${progress}%` }} /></div>
+                        {progress}%
+                      </div>
+                    </td>
+                    <td>{money(p.totalValue)}</td>
+                    <td><span className={`chip ${STATUS_CHIP[p.status] ?? "chip-planning"}`}>{p.status.replace("_", " ")}</span></td>
+                    <td style={{ textAlign: "right" }}>
+                      <Link href={`/admin/projects/${p.id}`} style={{ color: "var(--color-orange)", fontWeight: 600, fontSize: "12.5px" }}>Open →</Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }

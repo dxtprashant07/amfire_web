@@ -1,32 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useAuthStore, authFetch } from "@/stores/auth-store";
-import {
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  FolderKanban,
-  HeadphonesIcon,
-  FileEdit,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { authFetch, useAuthStore } from "@/stores/auth-store";
 
-const mainLinks = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/projects", label: "Projects", icon: FolderKanban, badgeKey: "activeProjects" as const },
-  { href: "/admin/users", label: "Users", icon: UserPlus },
-  { href: "/admin/leads", label: "Leads", icon: Users, badgeKey: "newLeads" as const },
-];
+/** Inline SVGs lifted from the admin UI kit so the sidebar matches it exactly. */
+const ICONS: Record<string, React.ReactNode> = {
+  dashboard: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>,
+  clients: <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><path d="M22 12h-4l-2 5-3-10-2 5H9" /></svg>,
+  projects: <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>,
+  users: <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><path d="M20 8v6M23 11h-6" /></svg>,
+  support: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+  content: <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>,
+  settings: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1" /></svg>,
+  logout: <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></svg>,
+};
 
-const teamLinks = [{ href: "/admin/support", label: "Support", icon: HeadphonesIcon, badgeKey: "openTickets" as const }];
-const systemLinks = [
-  { href: "/admin/content", label: "Content", icon: FileEdit },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+type BadgeKey = "activeProjects" | "newLeads" | "openTickets";
+
+const MAIN = [
+  { href: "/admin", label: "Dashboard", icon: "dashboard" as const },
+  { href: "/admin/leads", label: "Clients", icon: "clients" as const, badge: "newLeads" as BadgeKey },
+  { href: "/admin/projects", label: "Projects", icon: "projects" as const, badge: "activeProjects" as BadgeKey },
+  { href: "/admin/users", label: "Users", icon: "users" as const },
 ];
 
 function initials(name?: string) {
@@ -35,60 +32,21 @@ function initials(name?: string) {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "A";
 }
 
-function NavLink({
-  href,
-  label,
-  icon: Icon,
-  badge,
-  active,
-}: {
-  href: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  badge?: number;
-  active: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-3 rounded-[9px] px-3.5 py-2.5 text-sm font-medium transition-colors",
-        active
-          ? "gradient-bg font-semibold text-white shadow-[var(--shadow-glow-sm)]"
-          : "text-[#98A2AD] hover:bg-white/5 hover:text-[#F1F3F5]"
-      )}
-    >
-      <Icon size={18} />
-      {label}
-      {badge ? (
-        <span
-          className={cn(
-            "ml-auto rounded-full px-2 py-0.5 text-[11px] font-bold",
-            active ? "bg-white/25 text-white" : "bg-[rgba(251,146,60,0.18)] text-[#FB923C]"
-          )}
-        >
-          {badge}
-        </span>
-      ) : null}
-    </Link>
-  );
-}
-
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
-  const [badges, setBadges] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    authFetch("/api/admin/stats")
-      .then(async (res) => {
-        if (!res.ok) return;
-        const d = await res.json();
-        setBadges({ activeProjects: d.activeProjects, newLeads: d.newLeads, openTickets: d.openTickets });
-      })
-      .catch(() => {});
-  }, []);
+  const { data: stats } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: async () => {
+      const res = await authFetch("/api/admin/stats");
+      if (!res.ok) return null;
+      return (await res.json()) as Record<BadgeKey, number>;
+    },
+  });
+
+  const isActive = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -96,57 +54,51 @@ export function AdminSidebar() {
     router.replace("/login");
   }
 
-  const isActive = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
-
   return (
-    <aside className="w-[250px] shrink-0 bg-[var(--fg-default)] text-[#DEE2E6] h-screen sticky top-0 hidden md:flex flex-col">
-      {/* Logo + role pill */}
-      <div className="flex items-center justify-between gap-2 px-5 py-[22px] border-b border-white/[0.08]">
-        <Link href="/" className="text-lg font-extrabold tracking-[-0.02em] text-white">
-          am<span className="text-[var(--color-orange)]">fire</span>
-        </Link>
-        <span className="rounded-md border border-[rgba(251,146,60,0.35)] bg-[rgba(251,146,60,0.14)] px-2 py-1 text-[9px] font-extrabold tracking-[0.16em] text-[#FB923C]">
-          {user?.role === "SUPER_ADMIN" ? "SUPER ADMIN" : "ADMIN"}
-        </span>
+    <aside className="side">
+      <div className="side-h">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <Link href="/"><img src="/logo.svg" alt="amfire" /></Link>
+        <span className="rl">ADMIN</span>
       </div>
 
-      {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3.5">
-        {mainLinks.map((link) => (
-          <NavLink key={link.href} {...link} badge={link.badgeKey ? badges[link.badgeKey] : undefined} active={isActive(link.href)} />
-        ))}
+      <div className="snav">
+        {MAIN.map((link) => {
+          const count = link.badge ? stats?.[link.badge] : undefined;
+          return (
+            <Link key={link.href} href={link.href} className={isActive(link.href) ? "on" : ""}>
+              {ICONS[link.icon]}
+              {link.label}
+              {count ? <span className="bd">{count}</span> : null}
+            </Link>
+          );
+        })}
 
-        <div className="mb-1 mt-4 px-3.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6B7480]">Team</div>
-        {teamLinks.map((link) => (
-          <NavLink key={link.href} {...link} badge={link.badgeKey ? badges[link.badgeKey] : undefined} active={isActive(link.href)} />
-        ))}
+        <div className="grp">Team</div>
+        <Link href="/admin/support" className={isActive("/admin/support") ? "on" : ""}>
+          {ICONS.support}
+          Support
+          {stats?.openTickets ? <span className="bd">{stats.openTickets}</span> : null}
+        </Link>
 
-        <div className="mb-1 mt-4 px-3.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6B7480]">System</div>
-        {systemLinks.map((link) => (
-          <NavLink key={link.href} {...link} active={isActive(link.href)} />
-        ))}
-      </nav>
+        <div className="grp">System</div>
+        <Link href="/admin/content" className={isActive("/admin/content") ? "on" : ""}>
+          {ICONS.content}
+          Content
+        </Link>
+        <Link href="/admin/settings" className={isActive("/admin/settings") ? "on" : ""}>
+          {ICONS.settings}
+          Settings
+        </Link>
+        <a onClick={handleLogout}>{ICONS.logout}Log out</a>
+      </div>
 
-      {/* User footer */}
-      <div className="flex items-center gap-2.5 border-t border-white/[0.08] px-5 py-4">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full gradient-bg text-[13px] font-bold text-white">
-            {initials(user?.name)}
-          </span>
-          <div className="min-w-0">
-            <b className="block truncate text-[13px] text-[#F1F3F5]">{user?.name ?? "Admin"}</b>
-            <small className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#6B7480]">
-              {user?.role?.replace("_", " ") ?? "Admin"}
-            </small>
-          </div>
+      <div className="side-f">
+        <div className="av">{initials(user?.name)}</div>
+        <div style={{ minWidth: 0 }}>
+          <b>{user?.name}</b>
+          <small>{user?.role?.replace("_", " ")}</small>
         </div>
-        <button
-          onClick={handleLogout}
-          aria-label="Log out"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] text-[#98A2AD] transition-colors hover:bg-red-500/10 hover:text-red-400"
-        >
-          <LogOut size={16} />
-        </button>
       </div>
     </aside>
   );

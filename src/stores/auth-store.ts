@@ -5,6 +5,8 @@ interface AuthUser {
   name: string;
   email: string;
   role: string;
+  company?: string | null;
+  phone?: string | null;
 }
 
 interface AuthState {
@@ -14,6 +16,8 @@ interface AuthState {
   /** True once the initial refresh has completed (success or failure) */
   initialized: boolean;
   setAuth: (user: AuthUser, token: string) => void;
+  /** Patch the cached user after a profile edit, keeping the current token. */
+  setUser: (user: AuthUser) => void;
   clearAuth: () => void;
   setLoading: (v: boolean) => void;
   /** Call once on app mount to restore session from refresh cookie */
@@ -28,6 +32,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   initialized: false,
   setAuth: (user, accessToken) => set({ user, accessToken, loading: false, initialized: true }),
+  setUser: (user) => set({ user }),
   clearAuth: () => set({ user: null, accessToken: null, loading: false, initialized: true }),
   setLoading: (loading) => set({ loading }),
 

@@ -1,22 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { authFetch } from "@/stores/auth-store";
-import { useAuthStore } from "@/stores/auth-store";
+import { authFetch, useAuthStore } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
-import {
-  FolderKanban,
-  CreditCard,
-  FileText,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  Calendar,
-  Mail,
-  Phone,
-  HeadphonesIcon,
-} from "lucide-react";
 
 interface Milestone {
   id: string;
@@ -30,6 +18,7 @@ interface Milestone {
 interface Payment {
   status: string;
   amount: string;
+  dueDate: string | null;
 }
 
 interface ProjectSummary {
@@ -43,9 +32,32 @@ interface ProjectSummary {
   payments: Payment[];
 }
 
+interface Doc {
+  id: string;
+  name: string;
+  createdAt: string;
+  project: { name: string };
+}
+
+const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+const day = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—";
+
+function firstName(name?: string) {
+  return name?.trim().split(/\s+/)[0] ?? "there";
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";
+}
+
 export default function ClientDashboard() {
+  // Captured once per mount: Date.now() is impure during render.
+  const [now] = useState(() => Date.now());
   const { user } = useAuthStore();
-  const { data: projects = [], isLoading: loading, error } = useQuery({
+
+  const { data: projects = [], isLoading, error } = useQuery({
     queryKey: ["client-projects"],
     queryFn: async () => {
       const res = await authFetch("/api/client/projects");
@@ -55,221 +67,167 @@ export default function ClientDashboard() {
     },
   });
 
+  const { data: docs = [] } = useQuery({
+    queryKey: ["client-documents"],
+    queryFn: async () => {
+      const res = await authFetch("/api/client/documents");
+      if (!res.ok) return [];
+      const d = await res.json();
+      return (d.documents || []) as Doc[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="page on">
+        <Skeleton className="h-10 w-72 mb-6" />
+        <Skeleton className="h-28 mb-5 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page on">
+        <div className="welcome"><h1>Something went wrong</h1><p>We couldn&apos;t load your projects. Please refresh, or email contact@amfire.in.</p></div>
+      </div>
+    );
+  }
+
   const project = projects[0];
-  const completedMilestones = project?.milestones.filter((m) => m.status === "COMPLETED").length ?? 0;
-  const totalMilestones = project?.milestones.length ?? 0;
-  const paidPayments = project?.payments.filter((p) => p.status === "PAID").length ?? 0;
-  const totalPayments = project?.payments.length ?? 0;
-  const progressPercent = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+  const milestones = project?.milestones ?? [];
+  const done = milestones.filter((m) => m.status === "COMPLETED").length;
+  const active = milestones.find((m) => m.status === "IN_PROGRESS");
+  const percent = milestones.length ? Math.round((done / milestones.length) * 100) : 0;
 
-  // Next upcoming milestone (first non-completed, sorted by order)
-  const nextMilestone = project?.milestones
-    .filter((m) => m.status !== "COMPLETED")
-    .sort((a, b) => a.order - b.order)[0];
+  const allPayments = projects.flatMap((p) => p.payments ?? []);
+  const outstanding = allPayments
+    .filter((p) => p.status !== "PAID")
+    .reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
+  const nextDue = allPayments
+    .filter((p) => p.status !== "PAID" && p.dueDate)
+    .sort((a, b) => (a.dueDate! < b.dueDate! ? -1 : 1))[0];
 
-  const formatDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "TBD";
+  const daysLeft = project?.endDate
+    ? Math.max(0, Math.ceil((new Date(project.endDate).getTime() - now) / 86_400_000))
+    : null;
 
   return (
-    <div className="max-w-4xl">
-      <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)] mb-1.5">
-        Welcome back, <span className="gradient-text">{user?.name?.split(" ")[0]}</span>
-      </h1>
-      <p className="text-[15px] text-[var(--fg-muted)] mb-7">
-        Here&apos;s your project overview.
-      </p>
+    <div className="page on">
+      <div className="welcome">
+        <h1>
+          Welcome back,{" "}
+          <span style={{ background: "var(--gradient-fire)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+            {firstName(user?.name)}
+          </span>
+        </h1>
+        <p>
+          {project
+            ? active
+              ? `${active.title} is in progress — ${done} of ${milestones.length} milestones complete.`
+              : `${done} of ${milestones.length} milestones complete.`
+            : "No active project yet — your amfire contact will set one up shortly."}
+        </p>
+      </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-28 rounded-xl" />
-            ))}
+      <div className="grid-3">
+        <div className="kpi">
+          <div className="top">
+            <span className="lbl">Active Projects</span>
+            <div className="ic"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5" /><path d="M22 5H10L8 8H2" /></svg></div>
           </div>
-          <Skeleton className="h-48 rounded-xl" />
+          <div className="val">{projects.length}</div>
+          <div className="dta">{project?.status?.replace("_", " ") ?? "—"}</div>
         </div>
-      ) : error ? (
-        <div className="p-6 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
-          <AlertCircle size={32} className="mx-auto mb-3 text-destructive" />
-          <p className="text-sm text-destructive font-medium">Failed to load your projects.</p>
-          <p className="text-xs text-muted-foreground mt-1">Please try refreshing the page.</p>
-        </div>
-      ) : !project ? (
-        <div className="p-8 rounded-xl border border-dashed border-border text-center">
-          <p className="text-muted-foreground mb-4">No active projects yet.</p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg gradient-bg text-white text-sm font-medium"
-          >
-            Start a Project <ArrowRight size={14} />
-          </Link>
-        </div>
-      ) : (
-        <>
-          {/* Project header */}
-          <div className="p-6 rounded-xl border border-border bg-card mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold text-foreground">{project.name}</h2>
-              <Link href="/client/project" className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-                View Details <ArrowRight size={12} />
-              </Link>
-            </div>
-            {project.description && (
-              <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
-            )}
-
-            {/* Key info grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Status</p>
-                <p className="text-sm font-semibold text-foreground">{project.status.replace("_", " ")}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Start Date</p>
-                <p className="text-sm font-semibold text-foreground">{formatDate(project.startDate)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">End Date</p>
-                <p className="text-sm font-semibold text-foreground">{formatDate(project.endDate)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Next Milestone</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {nextMilestone
-                    ? nextMilestone.dueDate
-                      ? formatDate(nextMilestone.dueDate)
-                      : nextMilestone.title
-                    : "All done!"}
-                </p>
-              </div>
-            </div>
+        <div className="kpi">
+          <div className="top">
+            <span className="lbl">Milestones Done</span>
+            <div className="ic"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></div>
           </div>
-
-          {/* Stat cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-[22px] shadow-[var(--shadow-sm)]">
-              <div className="mb-4 flex items-start justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Progress</span>
-                <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-[var(--accent-tint)] text-[var(--color-orange)]">
-                  <FolderKanban size={17} />
-                </span>
-              </div>
-              <p className="text-[30px] font-extrabold leading-none tracking-[-0.02em] text-[var(--fg-default)]">{progressPercent}%</p>
-            </div>
-
-            <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-[22px] shadow-[var(--shadow-sm)]">
-              <div className="mb-4 flex items-start justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Milestones</span>
-                <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-[var(--accent-tint)] text-[var(--color-orange)]">
-                  <CheckCircle2 size={17} />
-                </span>
-              </div>
-              <p className="text-[30px] font-extrabold leading-none tracking-[-0.02em] text-[var(--fg-default)]">{completedMilestones} <span className="text-base font-semibold text-[var(--fg-muted)]">/ {totalMilestones}</span></p>
-            </div>
-
-            <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--surface-card)] p-[22px] shadow-[var(--shadow-sm)]">
-              <div className="mb-4 flex items-start justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Payments</span>
-                <span className="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-[var(--accent-tint)] text-[var(--color-orange)]">
-                  <CreditCard size={17} />
-                </span>
-              </div>
-              <p className="text-[30px] font-extrabold leading-none tracking-[-0.02em] text-[var(--fg-default)]">{paidPayments} <span className="text-base font-semibold text-[var(--fg-muted)]">/ {totalPayments} paid</span></p>
-            </div>
+          <div className="val">{done} <span style={{ fontSize: "16px", color: "var(--fg-muted)", fontWeight: 600 }}>/ {milestones.length}</span></div>
+          <div className="dta">{percent}% complete</div>
+        </div>
+        <div className="kpi">
+          <div className="top">
+            <span className="lbl">Outstanding</span>
+            <div className="ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg></div>
           </div>
+          <div className="val">{money(outstanding)}</div>
+          <div className="dta" style={{ color: "var(--color-orange)" }}>
+            {nextDue
+              ? `· Due ${day(nextDue.dueDate)}`
+              : outstanding > 0
+                ? "· Awaiting due date"
+                : "· Nothing due"}
+          </div>
+        </div>
+      </div>
 
-          {/* Milestone progress bar + list */}
-          <div className="p-6 rounded-xl border border-border bg-card mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">Milestone Tracker</h3>
-              <span className="text-xs text-muted-foreground">{progressPercent}% complete</span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="h-2.5 rounded-full bg-secondary overflow-hidden mb-5">
-              <div
-                className="h-full gradient-bg rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-
-            {/* Milestone list with actual titles */}
-            <div>
-              {project.milestones
-                .sort((a, b) => a.order - b.order)
-                .map((m, i) => (
-                  <div key={m.id} className="flex items-start gap-4 border-b border-[var(--border-subtle)] py-3.5 last:border-b-0">
-                    <span
-                      className={`grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full text-[12px] font-bold ${
-                        m.status === "COMPLETED"
-                          ? "gradient-bg text-white shadow-[var(--shadow-glow-sm)]"
-                          : m.status === "IN_PROGRESS"
-                          ? "border-2 border-[var(--color-orange)] bg-[var(--accent-tint)] text-[var(--color-orange)]"
-                          : "border border-[var(--border-default)] bg-[var(--surface-sunken)] text-[var(--fg-muted)]"
-                      }`}
-                    >
-                      {m.status === "COMPLETED" ? <CheckCircle2 size={14} /> : i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <b className={`text-sm font-bold ${m.status === "COMPLETED" ? "text-[var(--fg-muted)] line-through" : "text-[var(--fg-default)]"}`}>
-                          {m.title}
-                        </b>
-                        {m.status === "COMPLETED" && m.completedAt ? (
-                          <span className="shrink-0 rounded-full bg-[var(--color-success-bg)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--color-success)]">
-                            Done · {new Date(m.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                          </span>
-                        ) : m.status === "IN_PROGRESS" ? (
-                          <span className="shrink-0 rounded-full bg-[var(--accent-tint)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--color-orange)]">In progress</span>
-                        ) : (
-                          <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-[10.5px] font-bold text-[var(--fg-muted)]">Upcoming</span>
-                        )}
+      <div className="grid-hero">
+        <div className="panel">
+          <div className="panel-h">
+            <h2>Project timeline{project ? ` · ${project.name}` : ""}</h2>
+            <Link href="/client/project">View project →</Link>
+          </div>
+          {milestones.length === 0 ? (
+            <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No milestones yet.</p>
+          ) : (
+            milestones
+              .slice()
+              .sort((a, b) => a.order - b.order)
+              .map((m, i) => {
+                const state = m.status === "COMPLETED" ? "done" : m.status === "IN_PROGRESS" ? "active" : "wait";
+                return (
+                  <div className="mile" key={m.id}>
+                    <div className={`num ${state}`}>{state === "done" ? "✓" : i + 1}</div>
+                    <div className="b">
+                      <div className="r1">
+                        <h4>{m.title}</h4>
+                        <span className={`chip ${state}`}>
+                          {state === "done" ? "DONE" : state === "active" ? "IN PROGRESS" : "UPCOMING"}
+                        </span>
                       </div>
-                      {m.dueDate && m.status !== "COMPLETED" ? (
-                        <p className="mt-1 flex items-center gap-1 text-xs text-[var(--fg-muted)]">
-                          <Calendar size={12} /> Due {new Date(m.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                        </p>
-                      ) : null}
+                      <div className="meta">
+                        {m.completedAt ? `Completed · ${day(m.completedAt)}` : m.dueDate ? `Due · ${day(m.dueDate)}` : "Not scheduled"}
+                      </div>
                     </div>
                   </div>
-                ))}
-            </div>
-          </div>
+                );
+              })
+          )}
+        </div>
 
-          {/* Quick links */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            {[
-              { href: "/client/payments", label: "View Payments", icon: CreditCard },
-              { href: "/client/documents", label: "Project Documents", icon: FileText },
-              { href: "/client/support", label: "Get Support", icon: HeadphonesIcon },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/20 hover:shadow-sm transition-all"
-              >
-                <link.icon size={18} className="text-primary" />
-                <span className="text-sm font-medium text-foreground">{link.label}</span>
-              </Link>
-            ))}
+        <div className="proj-hero">
+          <div className="eye">Live Project</div>
+          <h2>{project?.name ?? "No project yet"}</h2>
+          <p>{project?.description ?? "Your amfire contact will share the scope here."}</p>
+          <div className="stats">
+            <div className="s"><span>{percent}%</span><small>Complete</small></div>
+            {daysLeft !== null ? <div className="s"><span>{daysLeft}</span><small>Days left</small></div> : null}
           </div>
+        </div>
+      </div>
 
-          {/* Contact card */}
-          <div className="p-5 rounded-xl border border-border bg-card">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Project Contact</h3>
-            <div className="flex flex-wrap gap-4">
-              <a href="mailto:contact@amfire.in" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <Mail size={14} /> contact@amfire.in
-              </a>
-              {process.env.NEXT_PUBLIC_WHATSAPP_NUMBER && (
-                <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                  <Phone size={14} /> WhatsApp
-                </a>
-              )}
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Recent files</h2>
+          <Link href="/client/documents">View all</Link>
+        </div>
+        {docs.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Nothing shared yet.</p>
+        ) : (
+          docs.slice(0, 4).map((d) => (
+            <div className="act" key={d.id}>
+              <div className="av">{initials(d.project?.name || "amfire")}</div>
+              <div>
+                <p><b>{d.name}</b> was shared in <b>{d.project?.name}</b></p>
+                <small>{new Date(d.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</small>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }

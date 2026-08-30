@@ -1,5 +1,6 @@
-import { DesignSystemHome } from "@/components/home/DesignSystemHome";
+import { getText } from "@/content/get-text";
+import { HomePageView } from "@/components/site/HomePageView";
 
-export default function HomePage() {
-  return <DesignSystemHome />;
+export default async function HomePage() {
+  return <HomePageView t={await getText()} />;
 }

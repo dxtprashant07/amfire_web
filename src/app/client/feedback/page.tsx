@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { Star, Send, AlertCircle } from "lucide-react";
 
 interface FeedbackItem {
   id: string;
@@ -19,10 +18,22 @@ interface ProjectOption {
   name: string;
 }
 
+const day = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+function Stars({ value }: { value: number }) {
+  return (
+    <span className="stars-read" aria-label={`${value} out of 5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= value ? "on" : ""}>★</span>
+      ))}
+    </span>
+  );
+}
+
 export default function ClientFeedbackPage() {
   const queryClient = useQueryClient();
 
-  const { data: feedbackData, isLoading: loading, error: loadError } = useQuery({
+  const { data, isLoading, error: loadError } = useQuery({
     queryKey: ["client-feedback-data"],
     queryFn: async () => {
       const [fbRes, pjRes] = await Promise.all([
@@ -36,27 +47,23 @@ export default function ClientFeedbackPage() {
     },
   });
 
-  const feedback = feedbackData?.feedback || [];
-  const projects = feedbackData?.projects || [];
+  const feedback = data?.feedback ?? [];
+  const projects = data?.projects ?? [];
 
-  // Form state
-  const [selectedProject, setSelectedProject] = useState("");
+  const [projectId, setProjectId] = useState("");
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
+  const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Set default project when data loads
-  if (projects.length > 0 && !selectedProject) {
-    setSelectedProject(projects[0].id);
-  }
+  const selectedProject = projectId || projects[0]?.id || "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedProject || rating === 0) {
-      setError("Please select a project and rating.");
+      setError("Pick a project and a rating.");
       return;
     }
 
@@ -70,17 +77,15 @@ export default function ClientFeedbackPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: selectedProject, rating, comment: comment || undefined }),
       });
-
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Failed to submit.");
+        const d = await res.json().catch(() => ({}));
+        setError(typeof d.error === "string" ? d.error : "Failed to submit.");
         setSubmitting(false);
         return;
       }
-
       setRating(0);
       setComment("");
-      setSuccess("Feedback submitted. Thank you!");
+      setSuccess("Thanks — the team sees this straight away.");
       queryClient.invalidateQueries({ queryKey: ["client-feedback-data"] });
     } catch {
       setError("Network error.");
@@ -88,125 +93,103 @@ export default function ClientFeedbackPage() {
     setSubmitting(false);
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="max-w-3xl space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-48 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
+      <div className="page on">
+        <Skeleton className="h-10 w-48 mb-6" />
+        <Skeleton className="h-56 rounded-2xl" />
       </div>
     );
   }
 
-  if (loadError) {
-    return (
-      <div className="max-w-3xl p-6 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
-        <AlertCircle size={32} className="mx-auto mb-3 text-destructive" />
-        <p className="text-sm text-destructive font-medium">Failed to load feedback.</p>
-      </div>
-    );
-  }
+  const average = feedback.length
+    ? (feedback.reduce((s, f) => s + f.rating, 0) / feedback.length).toFixed(1)
+    : "—";
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground mb-6">Feedback</h1>
+    <div className="page on">
+      <div className="welcome">
+        <h1>Feedback</h1>
+        <p>Rate a milestone or tell us what to change — it goes straight to the people building your project.</p>
+      </div>
 
-      {/* Submit form */}
-      {projects.length > 0 && (
-        <form onSubmit={handleSubmit} className="p-6 rounded-xl border border-border bg-card mb-8">
-          <h2 className="text-sm font-semibold text-foreground mb-4">Rate a completed milestone</h2>
+      <div className="grid-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <div className="kpi"><div className="top"><span className="lbl">Reviews left</span></div><div className="val">{feedback.length}</div></div>
+        <div className="kpi"><div className="top"><span className="lbl">Average rating</span></div><div className="val">{average}</div></div>
+      </div>
 
-          {projects.length > 1 && (
-            <select
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              className="w-full mb-4 px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary"
-            >
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          )}
+      <div className="panel">
+        <div className="panel-h"><h2>Leave feedback</h2></div>
+        <form className="ticket-form" onSubmit={handleSubmit}>
+          <select value={selectedProject} onChange={(e) => setProjectId(e.target.value)}>
+            {projects.length === 0 ? <option value="">No projects yet</option> : null}
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
 
-          {/* Star rating */}
-          <div className="flex items-center gap-1 mb-4">
-            {[1, 2, 3, 4, 5].map((star) => (
+          <div className="stars-pick">
+            {[1, 2, 3, 4, 5].map((n) => (
               <button
-                key={star}
+                key={n}
                 type="button"
-                onClick={() => setRating(star)}
-                onMouseEnter={() => setHoverRating(star)}
-                onMouseLeave={() => setHoverRating(0)}
-                className="p-0.5"
+                className={n <= (hover || rating) ? "on" : ""}
+                onClick={() => { setRating(n); setError(""); }}
+                onMouseEnter={() => setHover(n)}
+                onMouseLeave={() => setHover(0)}
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
               >
-                <Star
-                  size={24}
-                  className={`transition-colors ${
-                    star <= (hoverRating || rating)
-                      ? "fill-primary text-primary"
-                      : "text-border"
-                  }`}
-                />
+                ★
               </button>
             ))}
-            {rating > 0 && <span className="text-xs text-muted-foreground ml-2">{rating}/5</span>}
+            <span className="stars-hint">{rating ? `${rating} of 5` : "Tap to rate"}</span>
           </div>
 
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Optional comment..."
-            rows={3}
-            className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:border-primary resize-none mb-4"
-          />
+          <textarea rows={4} placeholder="What worked, what didn't, what you'd change." value={comment} onChange={(e) => setComment(e.target.value)} />
 
-          {error && <p className="text-xs text-destructive mb-3">{error}</p>}
-          {success && <p className="text-xs text-green-600 mb-3">{success}</p>}
+          {error ? <p style={{ fontSize: "12.5px", color: "var(--color-error)" }}>{error}</p> : null}
+          {success ? <p style={{ fontSize: "12.5px", color: "var(--color-success)" }}>{success}</p> : null}
 
           <button
             type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60"
+            disabled={submitting || projects.length === 0}
+            style={{
+              alignSelf: "flex-start",
+              padding: "10px 20px",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--gradient-fire)",
+              color: "#fff",
+              border: "none",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "var(--shadow-glow-sm)",
+            }}
           >
-            {submitting ? (
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <Send size={14} /> Submit Feedback
-              </>
-            )}
+            {submitting ? "Sending…" : "Send feedback"}
           </button>
         </form>
-      )}
+      </div>
 
-      {/* Past feedback */}
-      {feedback.length > 0 && (
-        <>
-          <h2 className="text-sm font-semibold text-foreground mb-4">Your feedback history</h2>
-          <div className="space-y-3">
-            {feedback.map((f) => (
-              <div key={f.id} className="p-4 rounded-xl border border-border bg-card">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-foreground">{f.project.name}</p>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(f.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-0.5 mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      size={14}
-                      className={star <= f.rating ? "fill-primary text-primary" : "text-border"}
-                    />
-                  ))}
-                </div>
-                {f.comment && <p className="text-sm text-muted-foreground">{f.comment}</p>}
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Your past feedback</h2>
+          <span style={{ fontSize: "12px", color: "var(--fg-muted)" }}>{feedback.length} entr{feedback.length === 1 ? "y" : "ies"}</span>
+        </div>
+        {loadError ? (
+          <p style={{ fontSize: "13px", color: "var(--color-error)" }}>Couldn&apos;t load your feedback. Please refresh.</p>
+        ) : feedback.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Nothing yet — the form above is the fastest way to reach us.</p>
+        ) : (
+          feedback.map((f) => (
+            <div className="ticket" key={f.id}>
+              <div className="th">
+                <div className="tt"><Stars value={f.rating} /><p>{f.project?.name}</p></div>
+                <span style={{ fontSize: "11px", color: "var(--fg-muted)" }}>{day(f.createdAt)}</span>
               </div>
-            ))}
-          </div>
-        </>
-      )}
+              {f.comment ? <p className="desc">{f.comment}</p> : null}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

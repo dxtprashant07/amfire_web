@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuthStore, authFetch } from "@/stores/auth-store";
-import {
-  Users, BarChart3, FolderKanban, Inbox, Headphones, TrendingUp,
-  FileText, CheckCircle2, AlertCircle,
-} from "lucide-react";
-import { Panel, PanelHeader, KpiCard, Chip, Table, Td, EmptyState, ProgressBar } from "@/components/admin/ui";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Stats {
   totalLeads: number;
@@ -26,208 +21,217 @@ interface Stats {
   trends: Record<string, { sparkline: number[]; trend: { direction: "up" | "down"; text: string } }>;
 }
 
-const leadChipTone: Record<string, "info" | "success" | "neutral"> = {
-  NEW: "info",
-  WON: "success",
+const STATUS_CHIP: Record<string, string> = {
+  IN_PROGRESS: "chip-active",
+  DISCOVERY: "chip-planning",
+  ON_HOLD: "chip-blocked",
+  COMPLETED: "chip-active",
+  CANCELLED: "chip-blocked",
 };
 
-const projectStatusTone: Record<string, "success" | "warning" | "info"> = {
-  IN_PROGRESS: "success",
-  DISCOVERY: "info",
-  ON_HOLD: "warning",
-};
+const money = (v: string | number) => `₹${Number(v ?? 0).toLocaleString("en-IN")}`;
+const day = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—";
+
+/** Renders the kit's sparkline shape from a small series of counts. */
+function Spark({ series, color }: { series?: number[]; color: string }) {
+  if (!series || series.length < 2) return null;
+  const max = Math.max(...series, 1);
+  const step = 100 / (series.length - 1);
+  const d = series.map((v, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)} ${(26 - (v / max) * 22).toFixed(1)}`).join(" ");
+  return (
+    <svg className="spark" viewBox="0 0 100 28" width="100%" height="28" preserveAspectRatio="none">
+      <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    authFetch("/api/admin/stats").then(async (res) => {
-      if (res.ok) setStats(await res.json());
-    }).catch(() => {});
+    authFetch("/api/admin/stats")
+      .then(async (res) => {
+        if (res.ok) setStats(await res.json());
+        else setFailed(true);
+      })
+      .catch(() => setFailed(true));
   }, []);
 
-  const statCards = stats ? [
-    { key: "leadsThisMonth", label: "Leads this month", value: stats.leadsThisMonth, icon: <TrendingUp size={15} />, tone: "success" as const },
-    { key: "newLeads", label: "New / uncontacted", value: stats.newLeads, icon: <Inbox size={15} />, tone: "info" as const },
-    { key: "activeProjects", label: "Active projects", value: stats.activeProjects, icon: <FolderKanban size={15} />, tone: "warning" as const },
-    { key: "totalClients", label: "Clients", value: stats.totalClients, icon: <Users size={15} />, tone: "warning" as const },
-    { key: "openTickets", label: "Open tickets", value: stats.openTickets, icon: <Headphones size={15} />, tone: "error" as const },
-    { key: "totalLeads", label: "Total leads", value: stats.totalLeads, icon: <BarChart3 size={15} />, tone: "neutral" as const },
-  ] : [];
-
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" });
-  const firstName = user?.name?.split(" ")[0] || user?.name;
+  const firstName = user?.name?.split(" ")[0] || "there";
+
+  const kpis = stats
+    ? [
+        { key: "leadsThisMonth", label: "Leads (this month)", value: stats.leadsThisMonth, tint: "var(--accent-tint)", stroke: "var(--color-orange)" },
+        { key: "activeProjects", label: "Active projects", value: stats.activeProjects, tint: "var(--color-success-bg)", stroke: "var(--color-success)" },
+        { key: "totalClients", label: "Clients", value: stats.totalClients, tint: "var(--accent-tint)", stroke: "var(--color-orange)" },
+        { key: "openTickets", label: "Open tickets", value: stats.openTickets, tint: "var(--color-error-bg)", stroke: "var(--color-error)" },
+      ]
+    : [];
+
+  const outstandingTotal = (stats?.outstandingPayments ?? []).reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
 
   return (
-    <div>
-      <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">
-        Hi {firstName} — <span className="gradient-text">here&apos;s what&apos;s moving</span>
+    <div className="page on">
+      <h1 className="h1">
+        Hi {firstName} — <span className="fire-text">here&apos;s what&apos;s moving</span>
       </h1>
-      <p className="mb-7 mt-1.5 text-[14.5px] text-[var(--fg-muted)]">{today} — here&apos;s what&apos;s moving today.</p>
+      <p className="sub">{today}</p>
 
-      {stats ? (
-        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {statCards.map((s) => (
-            <KpiCard
-              key={s.label}
-              label={s.label}
-              value={s.value}
-              icon={s.icon}
-              tone={s.tone}
-              sparkline={stats?.trends?.[s.key]?.sparkline}
-              trend={stats?.trends?.[s.key]?.trend}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {/* Active projects + Tasks/Milestones */}
-      <div className="mb-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-        <Panel>
-          <PanelHeader title="Active projects" action={<Link href="/admin/projects" className="text-[13px] font-semibold text-[var(--color-orange)]">View all →</Link>} />
-          {stats?.activeProjectsList && stats.activeProjectsList.length > 0 ? (
-            <Table>
-              <tbody>
-                {stats.activeProjectsList.map((p) => (
-                  <tr key={p.id}>
-                    <Td>
-                      <b className="font-semibold">{p.name}</b>
-                      <div className="mt-0.5 text-[11.5px] text-[var(--fg-muted)]">{p.client}</div>
-                    </Td>
-                    <Td><ProgressBar percent={p.progress} /></Td>
-                    <Td align="right"><Chip tone={projectStatusTone[p.status] ?? "neutral"}>{p.status.replace("_", " ")}</Chip></Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <EmptyState icon={<FolderKanban size={28} className="text-[var(--fg-subtle)]" />} text="No active projects yet." />
-          )}
-        </Panel>
-
-        <div className="flex flex-col gap-5">
-          <Panel>
-            <PanelHeader title="Pending tasks" />
-            {stats?.pendingTasks && stats.pendingTasks.length > 0 ? (
-              <div className="-mx-1">
-                {stats.pendingTasks.map((t) => {
-                  const done = t.status === "IN_PROGRESS";
-                  return (
-                    <div key={t.id} className="flex items-center gap-2.5 border-b border-[var(--border-subtle)] px-1 py-2.5 text-[13px] last:border-b-0">
-                      <input type="checkbox" readOnly checked={done} className="h-4 w-4 shrink-0 accent-[var(--color-orange)]" />
-                      <span className={cn("min-w-0 flex-1 truncate", done ? "text-[var(--fg-muted)] line-through" : "text-[var(--fg-default)]")}>{t.subject}</span>
-                      <span className="ml-auto shrink-0 text-[11.5px] text-[var(--fg-muted)]">{t.project.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState icon={<CheckCircle2 size={24} className="text-[var(--fg-subtle)]" />} text="No open tickets." />
-            )}
-          </Panel>
-
-          <Panel>
-            <PanelHeader title="Upcoming milestones" />
-            {stats?.upcomingMilestones && stats.upcomingMilestones.length > 0 ? (
-              <div className="-mx-1">
-                {stats.upcomingMilestones.map((m) => {
-                  const d = m.dueDate ? new Date(m.dueDate) : null;
-                  return (
-                    <div key={m.id} className="flex items-center gap-3 border-b border-[var(--border-subtle)] px-1 py-2.5 last:border-b-0">
-                      <div className="grid h-10 w-10 shrink-0 flex-col place-items-center rounded-[9px] bg-[var(--surface-sunken)]">
-                        <b className="text-sm font-extrabold leading-none text-[var(--fg-default)]">{d ? d.getDate() : "—"}</b>
-                        <small className="text-[8.5px] font-bold uppercase text-[var(--fg-muted)]">{d ? d.toLocaleDateString("en-US", { month: "short" }) : ""}</small>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <b className="block truncate text-[13px] text-[var(--fg-default)]">{m.title}</b>
-                        <small className="text-[11.5px] text-[var(--fg-muted)]">{m.project.name}</small>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState icon={<CheckCircle2 size={24} className="text-[var(--fg-subtle)]" />} text="No upcoming milestones." />
-            )}
-          </Panel>
-        </div>
-      </div>
-
-      {/* Recent activity + Outstanding payments */}
-      <div className="mb-6 grid gap-5 lg:grid-cols-2">
-        <Panel>
-          <PanelHeader title="Recent activity" />
-          {stats?.recentActivity && stats.recentActivity.length > 0 ? (
-            <div className="flex flex-col gap-1">
-              {stats.recentActivity.map((a) => (
-                <div key={a.id} className="-mx-1 flex items-start gap-3 rounded-[9px] px-1 py-2 text-[13px]">
-                  <span className="mt-1 grid h-6.5 w-6.5 shrink-0 place-items-center rounded-full bg-[var(--accent-tint)] text-[var(--color-orange)]">
-                    <FileText size={13} />
-                  </span>
-                  <div>
-                    <b className="font-semibold text-[var(--fg-default)]">{a.details || `${a.action} · ${a.entity}`}</b>
-                    <small className="mt-0.5 block text-[11.5px] text-[var(--fg-muted)]">
-                      {a.user?.name ? `${a.user.name} · ` : ""}
-                      {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    </small>
+      {failed ? (
+        <div className="panel"><p style={{ fontSize: "13px", color: "var(--color-error)" }}>Couldn&apos;t load dashboard stats. Check the database connection.</p></div>
+      ) : !stats ? (
+        <>
+          <Skeleton className="h-28 mb-5 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl" />
+        </>
+      ) : (
+        <>
+          <div className="grid-4">
+            {kpis.map((k) => (
+              <div className="kpi" key={k.key}>
+                <div className="kpi-head">
+                  <div className="lbl">{k.label}</div>
+                  <div className="kpi-ic" style={{ background: k.tint }}>
+                    <svg viewBox="0 0 24 24" style={{ stroke: k.stroke }}><path d="M12 19V5M5 12l7-7 7 7" /></svg>
                   </div>
                 </div>
-              ))}
+                <div className="val">{k.value}</div>
+                <Spark series={stats.trends?.[k.key]?.sparkline} color={k.stroke} />
+                <div className={`dta ${stats.trends?.[k.key]?.trend?.direction === "down" ? "dn" : "up"}`}>
+                  {stats.trends?.[k.key]?.trend?.text ?? ""}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="two-col">
+            <div className="panel">
+              <div className="panel-h">
+                <h2>Active projects</h2>
+                <Link href="/admin/projects" style={{ fontSize: "13px", color: "var(--color-orange)", fontWeight: 600 }}>View all →</Link>
+              </div>
+              {stats.activeProjectsList.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No active projects.</p>
+              ) : (
+                <table className="tbl">
+                  <tbody>
+                    {stats.activeProjectsList.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <b style={{ fontWeight: 700 }}>{p.name}</b>
+                          <div style={{ fontSize: "11.5px", color: "var(--fg-muted)" }}>{p.client}</div>
+                        </td>
+                        <td>
+                          <div className="pr">
+                            <div className="bar"><i style={{ width: `${p.progress}%` }} /></div>
+                            {p.progress}%
+                          </div>
+                        </td>
+                        <td><span className={`chip ${STATUS_CHIP[p.status] ?? "chip-planning"}`}>{p.status.replace("_", " ")}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
-          ) : (
-            <EmptyState icon={<AlertCircle size={24} className="text-[var(--fg-subtle)]" />} text="No activity recorded yet." />
-          )}
-        </Panel>
 
-        <Panel>
-          <PanelHeader title="Outstanding payments" action={<Link href="/admin/projects" className="text-[13px] font-semibold text-[var(--color-orange)]">View all →</Link>} />
-          {stats?.outstandingPayments && stats.outstandingPayments.length > 0 ? (
-            <Table>
-              <tbody>
-                {stats.outstandingPayments.map((p) => (
-                  <tr key={p.id}>
-                    <Td>
-                      <b className="font-semibold">{p.label}</b>
-                      <div className="mt-0.5 text-[11.5px] text-[var(--fg-muted)]">{p.project.name}</div>
-                    </Td>
-                    <Td align="right">
-                      <b className="font-bold">₹{Number(p.amount).toLocaleString("en-IN")}</b>
-                      <div className={`mt-0.5 text-[11.5px] ${p.status === "OVERDUE" ? "text-[var(--color-error)]" : "text-[var(--fg-muted)]"}`}>
-                        {p.status === "OVERDUE" ? "Overdue" : p.dueDate ? `Due ${new Date(p.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}` : "Due date TBD"}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div className="panel">
+                <div className="panel-h"><h2>Open tickets</h2></div>
+                {stats.pendingTasks.length === 0 ? (
+                  <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Nothing open.</p>
+                ) : (
+                  stats.pendingTasks.map((t) => (
+                    <div className="task-item" key={t.id}>
+                      <span>{t.subject}</span>
+                      <span className="due">{t.project?.name}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="panel">
+                <div className="panel-h"><h2>Upcoming milestones</h2></div>
+                {stats.upcomingMilestones.length === 0 ? (
+                  <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Nothing scheduled.</p>
+                ) : (
+                  stats.upcomingMilestones.map((m) => {
+                    const d = m.dueDate ? new Date(m.dueDate) : null;
+                    return (
+                      <div className="mile-item" key={m.id}>
+                        <div className="dd">
+                          <b>{d ? d.getDate() : "—"}</b>
+                          <small>{d ? d.toLocaleDateString("en-IN", { month: "short" }).toUpperCase() : ""}</small>
+                        </div>
+                        <div className="mm"><b>{m.title}</b><small>{m.project?.name}</small></div>
                       </div>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <EmptyState icon={<CheckCircle2 size={24} className="text-[var(--fg-subtle)]" />} text="No outstanding payments." />
-          )}
-        </Panel>
-      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
 
-      {/* Recent leads */}
-      <Panel>
-        <PanelHeader title="Recent leads" action={<Link href="/admin/leads" className="text-[13px] font-semibold text-[var(--color-orange)]">View all →</Link>} />
-        {stats?.recentLeads && stats.recentLeads.length > 0 ? (
-          <Table>
-            <tbody>
-              {stats.recentLeads.map((lead) => (
-                <tr key={lead.id}>
-                  <Td>
-                    <b className="font-semibold">{lead.name}</b>
-                    <div className="mt-0.5 text-[11.5px] text-[var(--fg-muted)]">{lead.email}{lead.service ? ` · ${lead.service}` : ""}</div>
-                  </Td>
-                  <Td align="right"><Chip tone={leadChipTone[lead.status] ?? "neutral"}>{lead.status}</Chip></Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        ) : (
-          <EmptyState icon={<Inbox size={28} className="text-[var(--fg-subtle)]" />} text="No leads yet. They'll appear here when visitors submit the contact form." />
-        )}
-      </Panel>
+          <div className="two-col">
+            <div className="panel">
+              <div className="panel-h"><h2>Recent activity</h2></div>
+              <div className="activity">
+                {stats.recentActivity.length === 0 ? (
+                  <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>No activity yet.</p>
+                ) : (
+                  stats.recentActivity.map((a) => (
+                    <div className="act-item" key={a.id}>
+                      <span className="act-ic" style={{ background: "var(--color-orange)" }}>
+                        <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z" /><path d="M15 2v5h5" /></svg>
+                      </span>
+                      <div>
+                        <b style={{ fontWeight: 600 }}>{a.details ?? `${a.action} ${a.entity}`}</b>
+                        <small>
+                          {new Date(a.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                          {a.user?.name ? ` · ${a.user.name}` : ""}
+                        </small>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-h">
+                <h2>Outstanding invoices</h2>
+                <span style={{ fontSize: "13px", fontWeight: 700 }}>{money(outstandingTotal)}</span>
+              </div>
+              {stats.outstandingPayments.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Everything is settled.</p>
+              ) : (
+                <table className="tbl">
+                  <tbody>
+                    {stats.outstandingPayments.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <b style={{ fontWeight: 700 }}>{p.label}</b>
+                          <div style={{ fontSize: "11.5px", color: "var(--fg-muted)" }}>{p.project?.name}</div>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <b style={{ fontWeight: 700 }}>{money(p.amount)}</b>
+                          <div style={{ fontSize: "11.5px", color: p.status === "OVERDUE" ? "var(--color-error)" : "var(--fg-muted)" }}>
+                            {p.status === "OVERDUE" ? "Overdue" : `Due ${day(p.dueDate)}`}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
