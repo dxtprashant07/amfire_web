@@ -30,7 +30,6 @@ export { Toast } from './Toast';
 export type { ToastProps } from './Toast';
 
 // Existing Components
-export { CookieBanner } from './CookieBanner';
 export { FloatingButtons } from './FloatingButtons';
 export { ScrollReveal } from './ScrollReveal';
 export { Skeleton } from './Skeleton';
