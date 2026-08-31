@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { authFetch } from "@/stores/auth-store";
 import { UserPlus, Shield, User as UserIcon, Building2, AlertCircle, CheckCircle2, KeyRound, X } from "lucide-react";
+import { Panel, Chip, Avatar, Table, Th, Td, EmptyState } from "@/components/admin/ui";
 
 interface UserRow {
   id: string;
@@ -112,30 +113,30 @@ export default function AdminUsersPage() {
     setResetSubmitting(false);
   }
 
-  const roleBadge = (role: string) => {
-    const styles: Record<string, string> = {
-      SUPER_ADMIN: "bg-primary/10 text-primary",
-      ADMIN: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-      CLIENT: "bg-green-500/10 text-green-600 dark:text-green-400",
-    };
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${styles[role] || ""}`}>
+  const roleTone: Record<string, "warning" | "info" | "success"> = {
+    SUPER_ADMIN: "warning",
+    ADMIN: "info",
+    CLIENT: "success",
+  };
+  const roleBadge = (role: string) => (
+    <Chip tone={roleTone[role] ?? "neutral"}>
+      <span className="inline-flex items-center gap-1">
         {role === "CLIENT" ? <UserIcon size={11} /> : <Shield size={11} />}
         {role.replace("_", " ")}
       </span>
-    );
-  };
+    </Chip>
+  );
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
+    <div>
+      <div className="mb-7 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Users</h1>
-          <p className="text-sm text-muted-foreground">Manage clients and team members</p>
+          <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Users</h1>
+          <p className="mt-1 text-[14.5px] text-[var(--fg-muted)]">Manage clients and team members</p>
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setError(""); setSuccess(""); }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 transition-all"
+          className="amfire-primary inline-flex items-center gap-2 rounded-[9px] px-4 py-2.5 text-sm font-bold transition-all"
         >
           <UserPlus size={16} />
           Add User
@@ -251,73 +252,66 @@ export default function AdminUsersPage() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 rounded-xl bg-secondary animate-pulse" />
+            <div key={i} className="h-16 rounded-xl bg-[var(--surface-sunken)] animate-pulse" />
           ))}
         </div>
       ) : users.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <UserIcon size={40} className="mx-auto mb-3 opacity-40" />
-          <p className="text-sm">No users yet. Click &quot;Add User&quot; to create one.</p>
-        </div>
+        <Panel>
+          <EmptyState icon={<UserIcon size={32} className="text-[var(--fg-subtle)]" />} text='No users yet. Click "Add User" to create one.' />
+        </Panel>
       ) : (
-        <div className="border border-border rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/50">
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Email</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground">Role</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden sm:table-cell">Company</th>
-                  <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Joined</th>
-                  <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+        <Panel className="p-0">
+          <Table>
+            <thead>
+              <tr>
+                <Th>Name</Th>
+                <Th>Email</Th>
+                <Th>Role</Th>
+                <Th>Company</Th>
+                <Th>Joined</Th>
+                <Th align="right">Actions</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <Td>
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={u.name} size={28} />
+                      <b className="font-semibold">{u.name}</b>
+                    </div>
+                  </Td>
+                  <Td><span className="text-[var(--fg-muted)]">{u.email}</span></Td>
+                  <Td>{roleBadge(u.role)}</Td>
+                  <Td>
+                    {u.company ? (
+                      <span className="flex items-center gap-1 text-[var(--fg-muted)]"><Building2 size={12} />{u.company}</span>
+                    ) : <span className="text-[var(--fg-subtle)]">—</span>}
+                  </Td>
+                  <Td><span className="text-[var(--fg-muted)]">{new Date(u.createdAt).toLocaleDateString()}</span></Td>
+                  <Td align="right">
+                    {u.role !== "SUPER_ADMIN" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetTarget(u);
+                          setResetPassword("");
+                          setResetError("");
+                          setError("");
+                          setSuccess("");
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-[9px] border border-[var(--border-default)] px-2.5 py-1.5 text-xs font-medium text-[var(--fg-muted)] transition-colors hover:border-[var(--color-orange)] hover:text-[var(--color-orange)]"
+                        title="Reset password"
+                      >
+                        <KeyRound size={12} /> Reset
+                      </button>
+                    )}
+                  </Td>
                 </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
-                          {u.name.charAt(0).toUpperCase()}
-                        </div>
-                        {u.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                    <td className="px-4 py-3">{roleBadge(u.role)}</td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                      {u.company ? (
-                        <span className="flex items-center gap-1"><Building2 size={12} />{u.company}</span>
-                      ) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                      {new Date(u.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {u.role !== "SUPER_ADMIN" && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResetTarget(u);
-                            setResetPassword("");
-                            setResetError("");
-                            setError("");
-                            setSuccess("");
-                          }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-xs text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
-                          title="Reset password"
-                        >
-                          <KeyRound size={12} /> Reset
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              ))}
+            </tbody>
+          </Table>
+        </Panel>
       )}
 
       {/* Reset Password Modal */}
