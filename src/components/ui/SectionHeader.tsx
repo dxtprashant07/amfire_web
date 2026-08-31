@@ -1,10 +1,14 @@
 import React from 'react';
 import { cn } from '@/lib/cn';
 
-interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+interface SectionHeaderProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   eyebrow?: string;
-  title: string;
+  title: React.ReactNode;
+  titleMb?: string;
   description?: string;
+  descriptionMaxW?: string;
+  descriptionMb?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'full';
   align?: 'left' | 'center';
 }
@@ -14,7 +18,10 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
     {
       eyebrow,
       title,
+      titleMb = 'mb-4',
       description,
+      descriptionMaxW,
+      descriptionMb,
       maxWidth = 'md',
       align = 'center',
       className,
@@ -40,16 +47,24 @@ const SectionHeader = React.forwardRef<HTMLDivElement, SectionHeaderProps>(
         className={cn(maxWidthStyles[maxWidth], alignStyles[align], className)}
         {...props}
       >
-        {eyebrow && (
-          <div className="amfire-eyebrow mb-4">
-            {eyebrow}
-          </div>
-        )}
-        <h2 className="text-5xl font-extrabold text-fg-default mb-4 leading-tight">
+        {eyebrow && <div className="amfire-eyebrow mb-4">{eyebrow}</div>}
+        <h2
+          className={cn(
+            'text-5xl font-extrabold text-fg-default leading-tight',
+            titleMb
+          )}
+        >
           {title}
         </h2>
         {description && (
-          <p className="text-lg text-fg-muted leading-relaxed">
+          <p
+            className={cn(
+              'text-lg text-fg-muted leading-relaxed',
+              descriptionMaxW,
+              align === 'center' && descriptionMaxW && 'mx-auto',
+              descriptionMb
+            )}
+          >
             {description}
           </p>
         )}
@@ -62,10 +77,3 @@ SectionHeader.displayName = 'SectionHeader';
 
 export { SectionHeader };
 export type { SectionHeaderProps };
-        >
-          {description}
-        </p>
-      )}
-    </>
-  );
-}

@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from "next/link";
-import { ArrowUpRight, Mail, Linkedin, Github } from "lucide-react";
+import { ArrowUpRight, Mail } from "lucide-react";
 import { cn } from '@/lib/cn';
 import NewsletterForm from "./NewsletterForm";
 function IconLinkedin() {
@@ -60,7 +60,7 @@ export function Footer() {
                   aria-label={item.label}
                   className="grid h-9 w-9 place-items-center rounded-[9px] bg-white/8 text-white/65 transition-colors hover:bg-[#f97316] hover:text-white"
                 >
-                  <item.icon size={16} />
+                  <item.icon />
                 </a>
               ))}
             </div>
