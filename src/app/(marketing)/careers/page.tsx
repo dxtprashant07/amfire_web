@@ -47,7 +47,7 @@ const openRoles = [
       "Monitor AI feature performance, cost, and latency in production",
     ],
     requirements: [
-      "Solid Python skills and experience with OpenAI or Anthropic APIs",
+      "Solid Python skills and experience with commercial LLM provider APIs",
       "Hands-on experience with LangChain, LlamaIndex, or similar frameworks",
       "Understanding of vector databases (pgvector, Pinecone, Weaviate)",
       "Bonus: Experience with fine-tuning, Whisper, or multimodal models",

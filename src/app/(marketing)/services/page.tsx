@@ -301,7 +301,7 @@ const services = [
   },
   {
     n: "03", index: "03", title: "AI Agents", tag: "Intelligence that works 24/7.",
-    bullets: ["LLM integration (GPT, Gemini, Claude)", "Multi-agent orchestration systems", "RAG systems for document intelligence"],
+    bullets: ["LLM integration (GPT, Gemini, Llama)", "Multi-agent orchestration systems", "RAG systems for document intelligence"],
     badges: ["LangChain", "LangGraph", "ChromaDB"],
     linkHref: "/services/ai-agents", linkLabel: "Explore AI agents",
     mock: <AiAgentMock />, reverse: false,

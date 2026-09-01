@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 const deliverables = [
-  "Custom LLM-powered chatbots and assistants (GPT-4o, Claude, Gemini)",
+  "Custom LLM-powered chatbots and assistants (GPT-4o, Gemini, Llama)",
   "Retrieval-Augmented Generation (RAG) pipelines over private data",
   "Autonomous AI agents with tool use and multi-step reasoning",
   "Document processing pipelines — OCR, extraction, summarisation",
@@ -22,7 +22,7 @@ const deliverables = [
 
 const stack = [
   { name: "OpenAI GPT-4o", color: "#412991" },
-  { name: "Claude 3.5", color: "#D97706" },
+  { name: "Frontier LLMs", color: "#D97706" },
   { name: "LangChain", color: "#1C3C3C" },
   { name: "LlamaIndex", color: "#FF6B35" },
   { name: "Pinecone", color: "#00D4AA" },
@@ -44,7 +44,7 @@ const caseStudies = [
   {
     title: "TalentScout — AI Recruitment Assistant",
     desc: "A RAG-based assistant that answers candidates' questions from a company's internal knowledge base, screens resumes against role requirements, and drafts shortlist summaries for hiring managers.",
-    tags: ["Claude", "LlamaIndex", "pgvector", "Python"],
+    tags: ["LLM", "LlamaIndex", "pgvector", "Python"],
   },
 ];
 
@@ -63,7 +63,7 @@ const faqs = [
   },
   {
     q: "Which AI models do you work with?",
-    a: "Primarily OpenAI (GPT-4o, o1), Anthropic (Claude 3.5 Sonnet), and Google (Gemini 1.5 Pro). For latency-sensitive or cost-sensitive cases we also work with open-source models via AWS Bedrock or self-hosted Ollama.",
+    a: "Primarily OpenAI (GPT-4o, o1), Google (Gemini 1.5 Pro), and other frontier model providers. For latency-sensitive or cost-sensitive cases we also work with open-source models via AWS Bedrock or self-hosted Ollama.",
   },
   {
     q: "How do you handle the cost of running AI in production?",
