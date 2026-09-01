@@ -104,3 +104,26 @@ export const devMockClientProjects = [
     ],
   },
 ];
+
+/** Fixtures for /api/client/payments, /documents, /feedback, /support when
+ * devMockEnabled — same reasoning as devMockClientProjects above. */
+export const devMockPayments = [
+  { id: "pay1", label: "Milestone 1 — Discovery", amount: "90000", percent: 20, status: "PAID", dueDate: new Date(Date.now() - 25 * 86400000).toISOString(), paidDate: new Date(Date.now() - 24 * 86400000).toISOString(), invoiceUrl: null, project: { name: "AI SaaS Launch" } },
+  { id: "pay2", label: "Milestone 2 — Design approved", amount: "135000", percent: 30, status: "PAID", dueDate: new Date(Date.now() - 10 * 86400000).toISOString(), paidDate: new Date(Date.now() - 9 * 86400000).toISOString(), invoiceUrl: null, project: { name: "AI SaaS Launch" } },
+  { id: "pay3", label: "Milestone 3 — AI integration", amount: "135000", percent: 25, status: "PENDING", dueDate: new Date(Date.now() + 4 * 86400000).toISOString(), paidDate: null, invoiceUrl: null, project: { name: "AI SaaS Launch" } },
+  { id: "pay4", label: "Milestone 4 — Production launch", amount: "90000", percent: 25, status: "PENDING", dueDate: new Date(Date.now() + 20 * 86400000).toISOString(), paidDate: null, invoiceUrl: null, project: { name: "AI SaaS Launch" } },
+];
+
+export const devMockDocuments = [
+  { id: "doc1", name: "Discovery_notes.pdf", type: "pdf", url: "#", size: 245000, createdAt: new Date(Date.now() - 25 * 86400000).toISOString(), project: { name: "AI SaaS Launch" } },
+  { id: "doc2", name: "UI_design_v2.pdf", type: "pdf", url: "#", size: 1820000, createdAt: new Date(Date.now() - 10 * 86400000).toISOString(), project: { name: "AI SaaS Launch" } },
+  { id: "doc3", name: "Staging_screenshot.png", type: "image", url: "#", size: 412000, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), project: { name: "AI SaaS Launch" } },
+];
+
+export const devMockFeedback = [
+  { id: "fb1", rating: 5, comment: "Design approval milestone looked great — clean and on brief.", createdAt: new Date(Date.now() - 9 * 86400000).toISOString(), project: { name: "AI SaaS Launch" } },
+];
+
+export const devMockTickets = [
+  { id: "tk1", subject: "Question about AI integration timeline", message: "Just checking we're still on track for the milestone 3 date.", status: "OPEN", createdAt: new Date(Date.now() - 2 * 86400000).toISOString(), project: { name: "AI SaaS Launch" } },
+];

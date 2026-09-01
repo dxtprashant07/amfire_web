@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db/client";
 import { requireAuth } from "@/services/auth/api-auth";
+import { devMockEnabled, devMockPayments } from "@/services/auth/dev-mock";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAuth(req, ["CLIENT"]);
   if ("error" in auth) return auth.error;
+
+  if (devMockEnabled) return NextResponse.json({ payments: devMockPayments });
 
   try {
     const payments = await prisma.payment.findMany({

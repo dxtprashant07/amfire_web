@@ -1,7 +1,6 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
-import { Panel, PanelHeader } from "@/components/admin/ui";
 
 const integrations = [
   {
@@ -39,14 +38,12 @@ const envVarDocs = [
 
 export default function AdminSettingsPage() {
   return (
-    <div>
-      <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">Settings</h1>
-      <p className="mb-7 mt-1.5 text-[14.5px] text-[var(--fg-muted)]">
-        Integration status and configuration reference.
-      </p>
+    <div className="page on">
+      <h1 className="h1">Settings</h1>
+      <p className="sub">Integration status and configuration reference.</p>
 
-      <Panel className="mb-6">
-        <PanelHeader title="Integrations" />
+      <div className="panel" style={{ marginBottom: "24px" }}>
+        <div className="panel-h"><h2>Integrations</h2></div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {integrations.map((int) => (
             <a
@@ -75,29 +72,24 @@ export default function AdminSettingsPage() {
             </a>
           ))}
         </div>
-      </Panel>
+      </div>
 
-      <Panel className="p-0">
-        <div className="p-6 pb-0">
-          <PanelHeader title="Environment variables reference" />
-        </div>
-        <table className="w-full border-collapse font-sans">
+      <div className="panel">
+        <div className="panel-h"><h2>Environment variables</h2></div>
+        <table className="tbl">
           <thead>
-            <tr>
-              <th className="border-b border-[var(--border-default)] px-6 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Variable</th>
-              <th className="border-b border-[var(--border-default)] px-6 py-3 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--fg-muted)]">Description</th>
-            </tr>
+            <tr><th>Variable</th><th>Description</th></tr>
           </thead>
           <tbody>
             {envVarDocs.map((v) => (
               <tr key={v.key}>
-                <td className="border-b border-[var(--border-subtle)] px-6 py-3 font-mono text-xs text-[var(--color-orange)] last:border-b-0">{v.key}</td>
-                <td className="border-b border-[var(--border-subtle)] px-6 py-3 text-xs text-[var(--fg-muted)] last:border-b-0">{v.desc}</td>
+                <td style={{ fontFamily: "monospace", fontSize: "12px", color: "var(--color-orange)" }}>{v.key}</td>
+                <td style={{ fontSize: "12.5px", color: "var(--fg-muted)" }}>{v.desc}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </Panel>
+      </div>
     </div>
   );
 }

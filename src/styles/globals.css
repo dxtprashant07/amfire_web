@@ -1,5 +1,14 @@
 @import "tailwindcss";
 @import "./tokens.css";
+/* Standalone AMFIRE design-system stylesheet, ported verbatim. Sits in its own
+   layer between base and components so its element rules (a, body, img) style
+   the marketing pages but never beat Tailwind utilities in admin/client. */
+@layer theme, base, amfire, components, utilities;
+@import "./amfire.css" layer(amfire);
+@import "./amfire-extras.css" layer(amfire);
+@import "./amfire-auth.css" layer(amfire);
+@import "./amfire-admin.css" layer(amfire);
+@import "./amfire-portal.css" layer(amfire);
 @config "../../tailwind.config.ts";
 
 /* Tailwind v4 doesn't read tailwind.config.ts's `colors` block into

@@ -1,9 +1,15 @@
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { FloatingButtons } from "@/components/ui/FloatingButtons";
-import { CookieBanner } from "@/components/ui/CookieBanner";
+import { getText } from "@/content/get-text";
+import { SiteNav } from "@/components/site/SiteNav";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteBehaviors } from "@/components/site/SiteBehaviors";
 
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+// Marketing pages are statically rendered but read their copy from the CMS,
+// so re-render them every 5 minutes to pick up admin edits.
+export const revalidate = 300;
+
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+  const t = await getText();
+
   return (
     <>
       <a
@@ -12,13 +18,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       >
         Skip to content
       </a>
-      <Navbar />
+      <SiteNav t={t} />
       <main id="main-content" className="flex-1">
         {children}
       </main>
-      <Footer />
-      <FloatingButtons />
-      <CookieBanner />
+      <SiteFooter t={t} />
+      <SiteBehaviors />
     </>
   );
 }

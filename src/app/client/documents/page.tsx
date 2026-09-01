@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { FileText, Download, File, Image, FileCode, AlertCircle } from "lucide-react";
 
 interface Doc {
   id: string;
@@ -15,25 +14,25 @@ interface Doc {
   project: { name: string };
 }
 
-const typeIcons: Record<string, typeof FileText> = {
-  pdf: FileText,
-  image: Image,
-  code: FileCode,
+const ICONS: Record<string, React.ReactNode> = {
+  image: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>,
+  pdf: <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></svg>,
+  code: <svg viewBox="0 0 24 24"><path d="m9 8-5 4 5 4M15 8l5 4-5 4" /></svg>,
 };
 
-function getIcon(type: string) {
-  return typeIcons[type] || File;
+function icon(type: string) {
+  return ICONS[type] ?? ICONS.pdf;
 }
 
 function formatSize(bytes: number | null) {
-  if (!bytes) return "";
+  if (!bytes) return null;
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export default function ClientDocumentsPage() {
-  const { data: docs = [], isLoading: loading, error } = useQuery({
+  const { data: docs = [], isLoading, error } = useQuery({
     queryKey: ["client-documents"],
     queryFn: async () => {
       const res = await authFetch("/api/client/documents");
@@ -43,65 +42,52 @@ export default function ClientDocumentsPage() {
     },
   });
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="max-w-3xl space-y-4">
-        <Skeleton className="h-8 w-48" />
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-16 rounded-xl" />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-3xl p-6 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
-        <AlertCircle size={32} className="mx-auto mb-3 text-destructive" />
-        <p className="text-sm text-destructive font-medium">Failed to load documents.</p>
+      <div className="page on">
+        <Skeleton className="h-10 w-48 mb-6" />
+        <Skeleton className="h-64 rounded-2xl" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-foreground mb-6">Documents</h1>
+    <div className="page on">
+      <div className="welcome">
+        <h1>Files</h1>
+        <p>Shared assets, deliverables, and design specs — everything we&apos;ve handed over.</p>
+      </div>
 
-      {docs.length === 0 ? (
-        <div className="p-8 rounded-xl border border-dashed border-border text-center">
-          <p className="text-muted-foreground">No documents uploaded yet.</p>
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Shared with you</h2>
+          <span style={{ fontSize: "12px", color: "var(--fg-muted)" }}>{docs.length} file{docs.length === 1 ? "" : "s"}</span>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {docs.map((doc) => {
-            const Icon = getIcon(doc.type);
+
+        {error ? (
+          <p style={{ fontSize: "13px", color: "var(--color-error)" }}>Failed to load files. Please refresh.</p>
+        ) : docs.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--fg-muted)" }}>Nothing shared yet — deliverables show up here as we ship them.</p>
+        ) : (
+          docs.map((doc) => {
+            const size = formatSize(doc.size);
             return (
-              <div key={doc.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
-                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                  <Icon size={18} className="text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{doc.project.name}</span>
-                    {doc.size && <span>· {formatSize(doc.size)}</span>}
+              <div className="file-row" key={doc.id}>
+                <div className="fic">{icon(doc.type)}</div>
+                <div className="fmeta">
+                  <p>{doc.name}</p>
+                  <small>
+                    <span>{doc.project?.name}</span>
+                    {size ? <span>· {size}</span> : null}
                     <span>· {new Date(doc.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
-                  </div>
+                  </small>
                 </div>
-                <a
-                  href={doc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
-                  title="Download"
-                >
-                  <Download size={16} />
-                </a>
+                <a className="fact" href={doc.url} target="_blank" rel="noopener noreferrer">Download</a>
               </div>
             );
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
     </div>
   );
 }

@@ -94,7 +94,7 @@ const categories = [
     faqs: [
       {
         q: "Which tech stack do you use?",
-        a: "Our default stack is Next.js + TypeScript for web, React Native for mobile, and Node.js or FastAPI for the backend, with PostgreSQL or MongoDB. For AI, we work with OpenAI, Anthropic, LangChain, and pgvector. We adapt based on project requirements.",
+        a: "Our default stack is Next.js + TypeScript for web, React Native for mobile, and Node.js or FastAPI for the backend, with PostgreSQL or MongoDB. For AI, we work with OpenAI, LangChain, and pgvector. We adapt based on project requirements.",
       },
       {
         q: "Can you work with our existing codebase?",

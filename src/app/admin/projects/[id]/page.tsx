@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { authFetch } from "@/stores/auth-store";
-import {
-  ArrowLeft, CheckCircle2, Clock, Plus, Trash2, AlertCircle,
-  FileText, CreditCard, Upload, Download, Save,
-} from "lucide-react";
+import { Skeleton } from "@/components/ui/Skeleton";
+
+const money = (v: string | number | null) => (v ? "₹" + Number(v).toLocaleString("en-IN") : "—");
+const day = (d: string | null) =>
+  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
 interface Milestone {
   id: string; title: string; description: string | null; order: number;
@@ -34,16 +36,29 @@ const PAY_STATUS = ["PENDING", "PAID", "OVERDUE"];
 export default function AdminProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
 
-  // Edit state for project fields
-  const [editStatus, setEditStatus] = useState("");
-  const [editDesc, setEditDesc] = useState("");
-  const [editStart, setEditStart] = useState("");
-  const [editEnd, setEditEnd] = useState("");
+  const { data: project = null, isLoading: loading, refetch } = useQuery({
+    queryKey: ["admin-project", id],
+    queryFn: async () => {
+      const res = await authFetch(`/api/admin/projects/${id}`);
+      if (!res.ok) throw new Error("Failed to load project");
+      return ((await res.json()).project ?? null) as Project | null;
+    },
+  });
+
+  // Edits overlay the fetched project, so nothing has to be copied into state
+  // when the query resolves.
+  const [edits, setEdits] = useState<Partial<Record<"status" | "description" | "startDate" | "endDate", string>>>({});
+  const editStatus = edits.status ?? project?.status ?? "";
+  const editDesc = edits.description ?? project?.description ?? "";
+  const editStart = edits.startDate ?? project?.startDate?.slice(0, 10) ?? "";
+  const editEnd = edits.endDate ?? project?.endDate?.slice(0, 10) ?? "";
+  const setEditStatus = (v: string) => setEdits((e) => ({ ...e, status: v }));
+  const setEditDesc = (v: string) => setEdits((e) => ({ ...e, description: v }));
+  const setEditStart = (v: string) => setEdits((e) => ({ ...e, startDate: v }));
+  const setEditEnd = (v: string) => setEdits((e) => ({ ...e, endDate: v }));
 
   // New milestone form
   const [showMsForm, setShowMsForm] = useState(false);
@@ -56,24 +71,6 @@ export default function AdminProjectDetailPage() {
   // New document form
   const [showDocForm, setShowDocForm] = useState(false);
   const [docForm, setDocForm] = useState({ name: "", type: "pdf", url: "" });
-
-  const fetchProject = useCallback(async () => {
-    const res = await authFetch(`/api/admin/projects/${id}`);
-    if (res.ok) {
-      const d = await res.json();
-      const p = d.project;
-      if (p) {
-        setProject(p);
-        setEditStatus(p.status);
-        setEditDesc(p.description || "");
-        setEditStart(p.startDate ? p.startDate.slice(0, 10) : "");
-        setEditEnd(p.endDate ? p.endDate.slice(0, 10) : "");
-      }
-    }
-    setLoading(false);
-  }, [id]);
-
-  useEffect(() => { fetchProject(); }, [fetchProject]);
 
   function flash(type: string, text: string) {
     setMsg({ type, text });
@@ -94,7 +91,7 @@ export default function AdminProjectDetailPage() {
         endDate: editEnd || undefined,
       }),
     });
-    if (res.ok) { flash("success", "Project updated"); fetchProject(); }
+    if (res.ok) { flash("success", "Project updated"); setEdits({}); refetch(); }
     else flash("error", "Failed to update");
     setSaving(false);
   }
@@ -112,7 +109,7 @@ export default function AdminProjectDetailPage() {
       setShowMsForm(false);
       setMsForm({ title: "", description: "", dueDate: "", notes: "" });
       flash("success", "Milestone added");
-      fetchProject();
+      refetch();
     } else flash("error", "Failed to add milestone");
   }
 
@@ -123,7 +120,7 @@ export default function AdminProjectDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ milestoneId, status }),
     });
-    fetchProject();
+    refetch();
   }
 
   // Add payment
@@ -138,7 +135,7 @@ export default function AdminProjectDetailPage() {
       setShowPayForm(false);
       setPayForm({ label: "", amount: "", percent: "", dueDate: "" });
       flash("success", "Payment milestone added");
-      fetchProject();
+      refetch();
     } else flash("error", "Failed to add payment");
   }
 
@@ -149,7 +146,7 @@ export default function AdminProjectDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentId, status }),
     });
-    fetchProject();
+    refetch();
   }
 
   // Delete payment
@@ -162,7 +159,7 @@ export default function AdminProjectDetailPage() {
     });
     if (res.ok) {
       flash("success", "Payment deleted");
-      fetchProject();
+      refetch();
     } else {
       flash("error", "Failed to delete payment");
     }
@@ -180,7 +177,7 @@ export default function AdminProjectDetailPage() {
       setShowDocForm(false);
       setDocForm({ name: "", type: "pdf", url: "" });
       flash("success", "Document added");
-      fetchProject();
+      refetch();
     } else flash("error", "Failed to add document");
   }
 
@@ -191,296 +188,248 @@ export default function AdminProjectDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ documentId }),
     });
-    fetchProject();
+    refetch();
   }
-
   if (loading) {
     return (
-      <div className="max-w-4xl space-y-4">
-        <div className="h-8 w-48 bg-secondary animate-pulse rounded-lg" />
-        <div className="h-48 bg-secondary animate-pulse rounded-xl" />
-        <div className="h-64 bg-secondary animate-pulse rounded-xl" />
+      <div className="page on space-y-4">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-72 rounded-2xl" />
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="max-w-4xl text-center py-16">
-        <AlertCircle size={40} className="mx-auto mb-3 text-muted-foreground opacity-40" />
-        <p className="text-muted-foreground">Project not found.</p>
-        <Link href="/admin/projects" className="text-primary text-sm hover:underline mt-2 inline-block">Back to Projects</Link>
+      <div className="page on">
+        <h1 className="h1">Project not found</h1>
+        <p className="sub">It may have been deleted.</p>
+        <Link className="btn-pri" href="/admin/projects" style={{ display: "inline-block", textDecoration: "none" }}>
+          ← Back to projects
+        </Link>
       </div>
     );
   }
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30";
-  const labelCls = "block text-xs font-medium text-muted-foreground mb-1.5";
+  const done = project.milestones.filter((m) => m.status === "COMPLETED").length;
+  const progress = project.milestones.length ? Math.round((done / project.milestones.length) * 100) : 0;
+  const paid = project.payments.filter((p) => p.status === "PAID").reduce((s, p) => s + Number(p.amount ?? 0), 0);
+  const outstanding = project.payments.filter((p) => p.status !== "PAID").reduce((s, p) => s + Number(p.amount ?? 0), 0);
 
   return (
-    <div className="max-w-4xl">
-      {/* Header */}
-      <button onClick={() => router.push("/admin/projects")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
-        <ArrowLeft size={16} /> Back to Projects
+    <div className="page on">
+      <button className="crumb-back" type="button" onClick={() => router.push("/admin/projects")}>
+        ← All projects
       </button>
 
-      {msg.text && (
-        <div className={`flex items-center gap-2 p-3 mb-4 rounded-lg text-sm ${msg.type === "success" ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"}`}>
-          {msg.type === "success" ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />} {msg.text}
-        </div>
-      )}
+      <h1 className="h1">{project.name}</h1>
+      <p className="sub">
+        {project.client.name}
+        {project.client.company ? ` · ${project.client.company}` : ""} · {project.client.email}
+      </p>
 
-      {/* Project Info Card */}
-      <div className="p-6 rounded-xl border border-border bg-card mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{project.name}</h1>
-            <p className="text-sm text-muted-foreground">{project.client.name} {project.client.company ? `· ${project.client.company}` : ""} · {project.client.email}</p>
+      {msg.text ? (
+        <p style={{ fontSize: "13px", fontWeight: 600, marginBottom: "14px", color: msg.type === "error" ? "var(--color-error)" : "var(--color-success)" }}>
+          {msg.text}
+        </p>
+      ) : null}
+
+      <div className="grid-4">
+        <div className="kpi">
+          <div className="lbl">Progress</div>
+          <div className="val">{progress}%</div>
+          <div className="dta up">{done} of {project.milestones.length} milestones</div>
+        </div>
+        <div className="kpi">
+          <div className="lbl">Project value</div>
+          <div className="val">{money(project.totalValue)}</div>
+        </div>
+        <div className="kpi">
+          <div className="lbl">Collected</div>
+          <div className="val">{money(paid)}</div>
+        </div>
+        <div className="kpi">
+          <div className="lbl">Outstanding</div>
+          <div className="val">{money(outstanding)}</div>
+          <div className={outstanding ? "dta dn" : "dta up"}>
+            {outstanding ? `${project.payments.filter((p) => p.status !== "PAID").length} unpaid` : "Fully settled"}
           </div>
-          <button onClick={handleSaveProject} disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg gradient-bg text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-all">
-            <Save size={14} /> {saving ? "Saving..." : "Save Changes"}
+        </div>
+      </div>
+
+      {/* Project details */}
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Project details</h2>
+          <button className="btn-pri" type="button" onClick={handleSaveProject} disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className={labelCls}>Status</label>
-            <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className={inputCls}>
+        <div className="form-grid">
+          <label className="fl">
+            Status
+            <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
               {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
             </select>
-          </div>
-          <div>
-            <label className={labelCls}>Start Date</label>
-            <input type="date" value={editStart} onChange={(e) => setEditStart(e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>End Date</label>
-            <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Total Value</label>
-            <p className="text-sm font-semibold text-foreground py-2">
-              {project.totalValue ? `₹${Number(project.totalValue).toLocaleString("en-IN")}` : "—"}
-            </p>
-          </div>
+          </label>
+          <label className="fl">
+            Start date
+            <input type="date" value={editStart} onChange={(e) => setEditStart(e.target.value)} />
+          </label>
+          <label className="fl">
+            Target end date
+            <input type="date" value={editEnd} onChange={(e) => setEditEnd(e.target.value)} />
+          </label>
         </div>
-        <div className="mt-4">
-          <label className={labelCls}>Description</label>
-          <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} className={`${inputCls} resize-none`} rows={2} />
-        </div>
+        <label className="fl">
+          Description
+          <textarea rows={3} value={editDesc} onChange={(e) => setEditDesc(e.target.value)} />
+        </label>
       </div>
 
-      {/* ─── MILESTONES ─── */}
-      <div className="p-6 rounded-xl border border-border bg-card mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Clock size={18} className="text-primary" /> Milestones ({project.milestones.length})
-          </h2>
-          <button onClick={() => setShowMsForm(!showMsForm)}
-            className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-            <Plus size={14} /> Add Milestone
+      {/* Milestones */}
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Milestones <span className="ct">{project.milestones.length}</span></h2>
+          <button className="btn-ghost" type="button" onClick={() => setShowMsForm(!showMsForm)}>
+            {showMsForm ? "Cancel" : "+ Add milestone"}
           </button>
         </div>
 
-        {showMsForm && (
-          <form onSubmit={handleAddMilestone} className="p-4 mb-4 rounded-lg border border-border bg-secondary/30 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Title *</label>
-                <input type="text" required value={msForm.title} onChange={(e) => setMsForm({ ...msForm, title: e.target.value })} className={inputCls} placeholder="UI Design Approval" />
-              </div>
-              <div>
-                <label className={labelCls}>Due Date</label>
-                <input type="date" value={msForm.dueDate} onChange={(e) => setMsForm({ ...msForm, dueDate: e.target.value })} className={inputCls} />
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>Description</label>
-              <input type="text" value={msForm.description} onChange={(e) => setMsForm({ ...msForm, description: e.target.value })} className={inputCls} placeholder="Deliver wireframes & mockups" />
-            </div>
-            <div>
-              <label className={labelCls}>Notes (visible to client)</label>
-              <input type="text" value={msForm.notes} onChange={(e) => setMsForm({ ...msForm, notes: e.target.value })} className={inputCls} placeholder="Optional note for the client" />
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-1.5 rounded-lg gradient-bg text-white text-xs font-medium">Add</button>
-              <button type="button" onClick={() => setShowMsForm(false)} className="px-4 py-1.5 rounded-lg border border-border text-xs text-muted-foreground">Cancel</button>
-            </div>
+        {showMsForm ? (
+          <form className="ticket-form" onSubmit={handleAddMilestone}>
+            <input placeholder="Milestone title" value={msForm.title} onChange={(e) => setMsForm({ ...msForm, title: e.target.value })} required />
+            <textarea rows={2} placeholder="What ships in this milestone?" value={msForm.description} onChange={(e) => setMsForm({ ...msForm, description: e.target.value })} />
+            <input type="date" value={msForm.dueDate} onChange={(e) => setMsForm({ ...msForm, dueDate: e.target.value })} />
+            <input placeholder="Internal notes (optional)" value={msForm.notes} onChange={(e) => setMsForm({ ...msForm, notes: e.target.value })} />
+            <button className="btn-pri" type="submit" style={{ alignSelf: "flex-start" }}>Add milestone</button>
           </form>
-        )}
+        ) : null}
 
         {project.milestones.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No milestones yet. Add milestones so clients can track progress.</p>
+          <p className="empty">No milestones yet.</p>
         ) : (
-          <div className="space-y-2">
-            {project.milestones.sort((a, b) => a.order - b.order).map((m) => (
-              <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                <span className="text-xs font-bold text-muted-foreground w-6 text-center">{m.order}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{m.title}</p>
-                  {m.description && <p className="text-xs text-muted-foreground">{m.description}</p>}
-                  <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground">
-                    {m.dueDate && <span>Due: {new Date(m.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>}
-                    {m.completedAt && <span className="text-green-600">Done: {new Date(m.completedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>}
-                    {m.notes && <span>Note: {m.notes}</span>}
-                  </div>
-                </div>
-                <select
-                  value={m.status}
-                  onChange={(e) => updateMilestoneStatus(m.id, e.target.value)}
-                  className={`text-xs px-2 py-1 rounded-lg border border-border bg-background ${
-                    m.status === "COMPLETED" ? "text-green-600" : m.status === "IN_PROGRESS" ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {MS_STATUS.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-                </select>
-              </div>
-            ))}
-          </div>
+          <table className="tbl">
+            <thead>
+              <tr><th>Milestone</th><th>Due</th><th>Completed</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {project.milestones.slice().sort((a, b) => a.order - b.order).map((m) => (
+                <tr key={m.id}>
+                  <td>
+                    <b style={{ fontWeight: 700 }}>{m.title}</b>
+                    {m.description ? <div style={{ fontSize: "11.5px", color: "var(--fg-muted)" }}>{m.description}</div> : null}
+                  </td>
+                  <td>{day(m.dueDate)}</td>
+                  <td>{day(m.completedAt)}</td>
+                  <td>
+                    <select className="cell-select" value={m.status} onChange={(e) => updateMilestoneStatus(m.id, e.target.value)}>
+                      {MS_STATUS.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* ─── PAYMENTS ─── */}
-      <div className="p-6 rounded-xl border border-border bg-card mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <CreditCard size={18} className="text-primary" /> Payments ({project.payments.length})
-          </h2>
-          <button onClick={() => setShowPayForm(!showPayForm)}
-            className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-            <Plus size={14} /> Add Payment
+      {/* Payments */}
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Payments <span className="ct">{project.payments.length}</span></h2>
+          <button className="btn-ghost" type="button" onClick={() => setShowPayForm(!showPayForm)}>
+            {showPayForm ? "Cancel" : "+ Add invoice"}
           </button>
         </div>
 
-        {showPayForm && (
-          <form onSubmit={handleAddPayment} className="p-4 mb-4 rounded-lg border border-border bg-secondary/30 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div>
-                <label className={labelCls}>Label *</label>
-                <input type="text" required value={payForm.label} onChange={(e) => setPayForm({ ...payForm, label: e.target.value })} className={inputCls} placeholder="Milestone 01 — Kickoff" />
-              </div>
-              <div>
-                <label className={labelCls}>Amount (₹) *</label>
-                <input type="number" required value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} className={inputCls} placeholder="60000" />
-              </div>
-              <div>
-                <label className={labelCls}>Percentage *</label>
-                <input type="number" required min={1} max={100} value={payForm.percent} onChange={(e) => setPayForm({ ...payForm, percent: e.target.value })} className={inputCls} placeholder="20" />
-              </div>
-              <div>
-                <label className={labelCls}>Due Date</label>
-                <input type="date" value={payForm.dueDate} onChange={(e) => setPayForm({ ...payForm, dueDate: e.target.value })} className={inputCls} />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-1.5 rounded-lg gradient-bg text-white text-xs font-medium">Add</button>
-              <button type="button" onClick={() => setShowPayForm(false)} className="px-4 py-1.5 rounded-lg border border-border text-xs text-muted-foreground">Cancel</button>
-            </div>
+        {showPayForm ? (
+          <form className="ticket-form" onSubmit={handleAddPayment}>
+            <input placeholder="Label — e.g. Milestone 2 · Design" value={payForm.label} onChange={(e) => setPayForm({ ...payForm, label: e.target.value })} required />
+            <input type="number" placeholder="Amount (₹)" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} required />
+            <input type="number" placeholder="Percent of project" value={payForm.percent} onChange={(e) => setPayForm({ ...payForm, percent: e.target.value })} required />
+            <input type="date" value={payForm.dueDate} onChange={(e) => setPayForm({ ...payForm, dueDate: e.target.value })} />
+            <button className="btn-pri" type="submit" style={{ alignSelf: "flex-start" }}>Add invoice</button>
           </form>
-        )}
+        ) : null}
 
         {project.payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No payment milestones yet. Blueprint: 20% kickoff, 30% staging, 25% AI complete, 25% launch.</p>
+          <p className="empty">No invoices yet.</p>
         ) : (
-          <div className="space-y-2">
-            {project.payments.map((p) => (
-              <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-foreground">{p.label}</p>
-                    <span className="text-xs text-muted-foreground">({p.percent}%)</span>
-                  </div>
-                  <div className="flex gap-3 mt-1 text-[11px] text-muted-foreground">
-                    <span className="font-semibold text-foreground">₹{Number(p.amount).toLocaleString("en-IN")}</span>
-                    {p.dueDate && <span>Due: {new Date(p.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>}
-                    {p.paidDate && <span className="text-green-600">Paid: {new Date(p.paidDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>}
-                    {p.invoiceUrl && <a href={p.invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-0.5"><Download size={10} /> Invoice</a>}
-                  </div>
-                </div>
-                <select
-                  value={p.status}
-                  onChange={(e) => updatePaymentStatus(p.id, e.target.value)}
-                  className={`text-xs px-2 py-1 rounded-lg border border-border bg-background ${
-                    p.status === "PAID" ? "text-green-600" : p.status === "OVERDUE" ? "text-red-600" : "text-muted-foreground"
-                  }`}
-                >
-                  {PAY_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => deletePayment(p.id, p.label)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 transition-colors"
-                  title="Delete payment"
-                  aria-label={`Delete payment ${p.label}`}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
+          <table className="tbl">
+            <thead>
+              <tr><th>Invoice</th><th>Amount</th><th>Due</th><th>Paid</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              {project.payments.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <b style={{ fontWeight: 700 }}>{p.label}</b>
+                    <div style={{ fontSize: "11.5px", color: "var(--fg-muted)" }}>{p.percent}% of project</div>
+                  </td>
+                  <td>{money(p.amount)}</td>
+                  <td>{day(p.dueDate)}</td>
+                  <td>{day(p.paidDate)}</td>
+                  <td>
+                    <select className="cell-select" value={p.status} onChange={(e) => updatePaymentStatus(p.id, e.target.value)}>
+                      {PAY_STATUS.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <button className="btn-danger" type="button" onClick={() => deletePayment(p.id, p.label)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* ─── DOCUMENTS ─── */}
-      <div className="p-6 rounded-xl border border-border bg-card mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <FileText size={18} className="text-primary" /> Documents ({project.documents.length})
-          </h2>
-          <button onClick={() => setShowDocForm(!showDocForm)}
-            className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-            <Upload size={14} /> Add Document
+      {/* Documents */}
+      <div className="panel">
+        <div className="panel-h">
+          <h2>Documents <span className="ct">{project.documents.length}</span></h2>
+          <button className="btn-ghost" type="button" onClick={() => setShowDocForm(!showDocForm)}>
+            {showDocForm ? "Cancel" : "+ Share a file"}
           </button>
         </div>
 
-        {showDocForm && (
-          <form onSubmit={handleAddDoc} className="p-4 mb-4 rounded-lg border border-border bg-secondary/30 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className={labelCls}>Name *</label>
-                <input type="text" required value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} className={inputCls} placeholder="Project Proposal.pdf" />
-              </div>
-              <div>
-                <label className={labelCls}>Type</label>
-                <select value={docForm.type} onChange={(e) => setDocForm({ ...docForm, type: e.target.value })} className={inputCls}>
-                  <option value="pdf">PDF</option>
-                  <option value="image">Image</option>
-                  <option value="code">Code / Archive</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>URL *</label>
-                <input type="url" required value={docForm.url} onChange={(e) => setDocForm({ ...docForm, url: e.target.value })} className={inputCls} placeholder="https://drive.google.com/..." />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-1.5 rounded-lg gradient-bg text-white text-xs font-medium">Add</button>
-              <button type="button" onClick={() => setShowDocForm(false)} className="px-4 py-1.5 rounded-lg border border-border text-xs text-muted-foreground">Cancel</button>
-            </div>
+        {showDocForm ? (
+          <form className="ticket-form" onSubmit={handleAddDoc}>
+            <input placeholder="File name shown to the client" value={docForm.name} onChange={(e) => setDocForm({ ...docForm, name: e.target.value })} required />
+            <select value={docForm.type} onChange={(e) => setDocForm({ ...docForm, type: e.target.value })}>
+              <option value="pdf">PDF / document</option>
+              <option value="image">Image</option>
+              <option value="code">Code / archive</option>
+            </select>
+            <input placeholder="https://… link the client can open" value={docForm.url} onChange={(e) => setDocForm({ ...docForm, url: e.target.value })} required />
+            <button className="btn-pri" type="submit" style={{ alignSelf: "flex-start" }}>Share file</button>
           </form>
-        )}
+        ) : null}
 
         {project.documents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No documents yet. Share proposals, contracts, designs or handover docs here.</p>
+          <p className="empty">Nothing shared with this client yet.</p>
         ) : (
-          <div className="space-y-2">
-            {project.documents.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                <FileText size={16} className="text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{d.type} · {new Date(d.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
-                </div>
-                <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1">
-                  <Download size={12} /> Open
-                </a>
-                <button onClick={() => deleteDoc(d.id)} className="text-muted-foreground hover:text-destructive transition-colors" title="Delete">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
+          <table className="tbl">
+            <thead>
+              <tr><th>File</th><th>Type</th><th>Shared</th><th></th></tr>
+            </thead>
+            <tbody>
+              {project.documents.map((d) => (
+                <tr key={d.id}>
+                  <td>
+                    <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700, color: "var(--color-orange)" }}>{d.name}</a>
+                  </td>
+                  <td>{d.type}</td>
+                  <td>{day(d.createdAt)}</td>
+                  <td style={{ textAlign: "right" }}>
+                    <button className="btn-danger" type="button" onClick={() => deleteDoc(d.id)}>Remove</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

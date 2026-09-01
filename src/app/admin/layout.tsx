@@ -13,11 +13,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <QueryProvider>
       <AdminAuthProvider>
-        <div className="flex min-h-screen">
-          <AdminSidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <AdminTopbar />
-            <main className="mx-auto w-full max-w-[1300px] flex-1 p-8">{children}</main>
+        {/* .ui-admin scopes the admin UI kit's stylesheet. */}
+        <div className="ui-admin">
+          <div className="app">
+            <AdminSidebar />
+            <div className="main">
+              <AdminTopbar />
+              <div className="content">{children}</div>
+            </div>
           </div>
         </div>
       </AdminAuthProvider>

@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db/client";
 import { requireAuth } from "@/services/auth/api-auth";
 import { feedbackSchema } from "@/lib/validations";
+import { devMockEnabled, devMockFeedback } from "@/services/auth/dev-mock";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAuth(req, ["CLIENT"]);
   if ("error" in auth) return auth.error;
+
+  if (devMockEnabled) return NextResponse.json({ feedback: devMockFeedback });
 
   try {
     const feedback = await prisma.feedback.findMany({
@@ -33,6 +36,12 @@ export async function POST(req: NextRequest) {
   const parsed = feedbackSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
+  if (devMockEnabled) {
+    return NextResponse.json({
+      feedback: { id: `dev-${Date.now()}`, ...parsed.data, createdAt: new Date().toISOString() },
+    }, { status: 201 });
   }
 
   try {

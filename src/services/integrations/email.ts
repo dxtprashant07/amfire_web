@@ -73,3 +73,29 @@ export async function sendWelcomeEmail({
     `,
   });
 }
+
+/**
+ * Notifies the amfire team that a user asked for a password reset. There is no
+ * self-serve reset token yet — an admin resets the password and the existing
+ * welcome email carries the new credentials.
+ */
+export async function sendPasswordResetRequest({ name, email }: { name: string; email: string }) {
+  const to = process.env.TEAM_INBOX_EMAIL || "contact@amfire.in";
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+
+  await getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `Password reset requested — ${safeEmail}`,
+    html: `
+      <div style="font-family: Inter, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px;">
+        <h2 style="color: #1a1a1a; font-size: 20px; margin-bottom: 8px;">Password reset requested</h2>
+        <p style="color: #666; font-size: 15px; line-height: 1.7;">
+          <strong>${safeName}</strong> (${safeEmail}) asked to reset their password.
+          Reset it from Admin &rarr; Users, and the new credentials will be emailed to them.
+        </p>
+      </div>
+    `,
+  });
+}

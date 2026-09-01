@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/db/client";
 import { requireAuth } from "@/services/auth/api-auth";
 import { supportTicketSchema } from "@/lib/validations";
+import { devMockEnabled, devMockTickets } from "@/services/auth/dev-mock";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAuth(req, ["CLIENT"]);
   if ("error" in auth) return auth.error;
+
+  if (devMockEnabled) return NextResponse.json({ tickets: devMockTickets });
 
   try {
     const tickets = await prisma.supportTicket.findMany({
@@ -33,6 +36,12 @@ export async function POST(req: NextRequest) {
   const parsed = supportTicketSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
+  if (devMockEnabled) {
+    return NextResponse.json({
+      ticket: { id: `dev-${Date.now()}`, ...parsed.data, status: "OPEN", createdAt: new Date().toISOString() },
+    }, { status: 201 });
   }
 
   try {

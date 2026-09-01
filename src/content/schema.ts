@@ -53,6 +53,7 @@ export const productsSchema = z.array(
     name: z.string().min(1),
     text: z.string().min(1),
     featured: z.boolean().optional(),
+    href: z.string().min(1).optional(),
   })
 ).min(1);
 

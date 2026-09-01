@@ -23,14 +23,10 @@ export type { IconBoxProps } from './IconBox';
 export { ProgressBar } from './ProgressBar';
 export type { ProgressBarProps } from './ProgressBar';
 
-export { SectionHeader } from './SectionHeader';
-export type { SectionHeaderProps } from './SectionHeader';
-
 export { Toast } from './Toast';
 export type { ToastProps } from './Toast';
 
 // Existing Components
-export { CookieBanner } from './CookieBanner';
 export { FloatingButtons } from './FloatingButtons';
 export { ScrollReveal } from './ScrollReveal';
 export { Skeleton } from './Skeleton';

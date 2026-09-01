@@ -2,25 +2,31 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth-store";
-import {
-  LayoutDashboard,
-  FolderKanban,
-  CreditCard,
-  FileText,
-  MessageSquare,
-  HeadphonesIcon,
-  LogOut,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { authFetch, useAuthStore } from "@/stores/auth-store";
 
-const links = [
-  { href: "/client", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/client/project", label: "Project", icon: FolderKanban },
-  { href: "/client/payments", label: "Payments", icon: CreditCard },
-  { href: "/client/documents", label: "Documents", icon: FileText },
-  { href: "/client/feedback", label: "Feedback", icon: MessageSquare },
-  { href: "/client/support", label: "Support", icon: HeadphonesIcon },
+/** Icons are the design kit's inline SVGs, kept as-is so the sidebar matches. */
+const ICONS: Record<string, React.ReactNode> = {
+  dashboard: (
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
+  ),
+  project: <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>,
+  payments: <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>,
+  files: <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M13 2v7h7" /></svg>,
+  support: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
+  feedback: <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.6.8-4.9 4.5 1.3 6.4L12 16.8 6.1 20l1.3-6.4L2.5 9.1l6.6-.8z" /></svg>,
+  settings: (
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z" /></svg>
+  ),
+};
+
+const LINKS = [
+  { href: "/client", label: "Dashboard", icon: "dashboard" },
+  { href: "/client/project", label: "Project", icon: "project" },
+  { href: "/client/payments", label: "Payments", icon: "payments" },
+  { href: "/client/documents", label: "Files", icon: "files" },
+  { href: "/client/support", label: "Support", icon: "support" },
+  { href: "/client/feedback", label: "Feedback", icon: "feedback" },
 ];
 
 function initials(name?: string) {
@@ -34,6 +40,17 @@ export function ClientSidebar() {
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
 
+  // Unpaid-invoice count for the Payments badge in the design.
+  const { data: due = 0 } = useQuery({
+    queryKey: ["client-payments-due"],
+    queryFn: async () => {
+      const res = await authFetch("/api/client/payments");
+      if (!res.ok) return 0;
+      const d = await res.json();
+      return ((d.payments || []) as { status: string }[]).filter((p) => p.status !== "PAID").length;
+    },
+  });
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     clearAuth();
@@ -41,54 +58,45 @@ export function ClientSidebar() {
   }
 
   return (
-    <aside className="w-[260px] shrink-0 border-r border-[var(--border-default)] bg-[var(--surface-card)] h-screen sticky top-0 hidden md:flex flex-col">
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 px-5 py-[22px] border-b border-[var(--border-default)]">
-        <Link href="/" className="text-lg font-extrabold tracking-[-0.02em] text-[var(--fg-default)]">
-          am<span className="text-[var(--color-orange)]">fire</span>
-        </Link>
+    <aside className="side">
+      <div className="side-h">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <Link href="/"><img src="/logo.svg" alt="amfire" /></Link>
       </div>
 
-      {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3.5">
-        {links.map((link) => {
-          const active = pathname === link.href;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-3 rounded-[9px] px-3.5 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "gradient-bg font-semibold text-white shadow-[var(--shadow-glow-sm)]"
-                  : "text-[var(--fg-muted)] hover:bg-[var(--surface-sunken)] hover:text-[var(--fg-default)]"
-              )}
-            >
-              <link.icon size={18} />
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* User footer */}
-      <div className="flex items-center gap-2.5 border-t border-[var(--border-default)] px-4 py-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full gradient-bg text-[13px] font-bold text-white">
-            {initials(user?.name)}
-          </span>
-          <div className="min-w-0">
-            <b className="block truncate text-[13px] text-[var(--fg-default)]">{user?.name}</b>
-            <small className="block truncate text-[11px] text-[var(--fg-muted)]">{user?.email}</small>
-          </div>
+      <div className="workspace">
+        <div className="lbl">Workspace</div>
+        <div className="name">
+          {user?.company || user?.name || "Your workspace"}
+          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
         </div>
-        <button
-          onClick={handleLogout}
-          aria-label="Log out"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] text-[var(--fg-muted)] transition-colors hover:bg-red-500/10 hover:text-red-500"
-        >
-          <LogOut size={16} />
-        </button>
+      </div>
+
+      <div className="snav">
+        {LINKS.map((link) => (
+          <Link key={link.href} href={link.href} className={pathname === link.href ? "on" : ""}>
+            {ICONS[link.icon]}
+            {link.label}
+            {link.href === "/client/payments" && due > 0 ? <span className="bd">{due}</span> : null}
+          </Link>
+        ))}
+        <div className="grp">Account</div>
+        <Link href="/client/settings" className={pathname === "/client/settings" ? "on" : ""}>
+          {ICONS.settings}
+          Settings
+        </Link>
+        <a onClick={handleLogout}>
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5M21 12H9" /></svg>
+          Log out
+        </a>
+      </div>
+
+      <div className="side-f">
+        <div className="av">{initials(user?.name)}</div>
+        <div style={{ minWidth: 0 }}>
+          <b>{user?.name}</b>
+          <small>{user?.email}</small>
+        </div>
       </div>
     </aside>
   );
