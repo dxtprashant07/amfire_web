@@ -7,7 +7,8 @@
     "postinstall": "prisma generate",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:image-type": "node --experimental-strip-types scripts/check-image-type.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.6.0",

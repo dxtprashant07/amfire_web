@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { authFetch } from "@/stores/auth-store";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { textDefaults } from "@/content/text-defaults";
@@ -19,10 +19,72 @@ const GROUPS: { key: string; label: string; hint: string }[] = [
   { key: "wizard", label: "Contact form", hint: "Step labels, fields, and confirmation copy." },
   { key: "newsletter", label: "Newsletter", hint: "Footer signup states." },
   { key: "footer", label: "Footer", hint: "Columns, links, and legal line." },
-  { key: "image", label: "Images", hint: "Paste a URL to swap any picture on the site." },
+  { key: "image", label: "Images", hint: "Upload a picture, or paste a URL, to swap any image on the site." },
 ];
 
 type Draft = Record<string, string>;
+
+/**
+ * Picture control for an `image.*` field: uploads the chosen file to the media
+ * library and writes the resulting URL back into the field. The URL input above
+ * stays editable, so pasting an external link still works.
+ */
+function ImageUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function upload(file: File) {
+    setBusy(true);
+    setError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      // No Content-Type header: fetch must set the multipart boundary itself.
+      const res = await authFetch("/api/admin/media", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(typeof data.error === "string" ? data.error : "Upload failed.");
+      } else {
+        onChange(data.media.url);
+      }
+    } catch {
+      setError("Network error.");
+    }
+    setBusy(false);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div className="cfield-img">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void upload(file);
+        }}
+      />
+      <div className="cfield-img-row">
+        <button type="button" className="cfield-upload" disabled={busy} onClick={() => inputRef.current?.click()}>
+          {busy ? "Uploading…" : value ? "Replace image" : "Upload image"}
+        </button>
+        {value ? (
+          <button type="button" className="cfield-clear" onClick={() => onChange("")}>Remove</button>
+        ) : null}
+        <span className="cfield-hint">
+          {error ? error : "PNG, JPEG, WebP, GIF or AVIF · up to 5 MB · Save to publish"}
+        </span>
+      </div>
+      {value ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="cfield-preview" src={value} alt="" />
+      ) : null}
+    </div>
+  );
+}
 
 /** A page like Home has 300+ strings; render a slice and let the editor ask for more. */
 const PAGE_SIZE = 40;
@@ -230,9 +292,8 @@ export default function AdminContentPage() {
                       onChange={(e) => setDraft({ ...draft, [id]: e.target.value })}
                     />
                   )}
-                  {isImage && value ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className="cfield-preview" src={value} alt="" />
+                  {isImage ? (
+                    <ImageUpload value={value} onChange={(url) => setDraft({ ...draft, [id]: url })} />
                   ) : null}
                 </div>
               );

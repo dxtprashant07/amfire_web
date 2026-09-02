@@ -15,6 +15,15 @@ const ROUTES: Record<string, string> = {
   contact: "/contact",
 };
 
+/** Open/close the mobile nav drawer. Body scroll is locked while it is open. */
+function setNav(open: boolean) {
+  const nav = document.getElementById("navbar");
+  if (!nav) return;
+  nav.classList.toggle("open", open);
+  document.body.classList.toggle("nav-locked", open);
+  nav.querySelector("#nav-burger")?.setAttribute("aria-expanded", String(open));
+}
+
 /**
  * Ports the standalone design's inline scripts: [data-go] navigation (now real
  * routing), filter chips, the scrolled navbar state, section reveal-on-scroll,
@@ -29,17 +38,28 @@ export function SiteBehaviors() {
     document
       .querySelectorAll<HTMLElement>(".nlinks a")
       .forEach((a) => a.classList.toggle("on", a.dataset.go === current));
+    setNav(false);
   }, [pathname]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
       const target = e.target as HTMLElement | null;
+
+      // Mobile drawer. The desktop nav has no toggle, so this is a no-op there.
+      if (target?.closest("#nav-burger")) {
+        setNav(!document.getElementById("navbar")?.classList.contains("open"));
+        return;
+      }
+      if (!target?.closest("#navbar")) setNav(false);
+
       const go = target?.closest<HTMLElement>("[data-go]");
       if (go) {
+        setNav(false);
         const href = ROUTES[go.dataset.go ?? ""];
         if (href) router.push(href);
         return;
       }
+      if (target?.closest(".nlinks a")) setNav(false);
       const chip = target?.closest<HTMLElement>(".filter .p");
       if (chip) {
         chip.parentElement?.querySelectorAll(".p").forEach((x) => x.classList.remove("on"));
@@ -49,6 +69,17 @@ export function SiteBehaviors() {
 
     function onScroll() {
       document.getElementById("navbar")?.classList.toggle("scrolled", window.scrollY > 8);
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setNav(false);
+    }
+
+    // The drawer only exists below 920px; rotating past it must not leave the
+    // body scroll-locked.
+    function onResize() {
+      fitProcess();
+      if (window.innerWidth > 920) setNav(false);
     }
 
     function fitProcess() {
@@ -87,14 +118,17 @@ export function SiteBehaviors() {
     const t2 = setTimeout(fitProcess, 1000);
 
     document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", fitProcess);
+    window.addEventListener("resize", onResize);
     onScroll();
 
     return () => {
       document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", fitProcess);
+      window.removeEventListener("resize", onResize);
+      setNav(false);
       reveal.disconnect();
       clearTimeout(t1);
       clearTimeout(t2);

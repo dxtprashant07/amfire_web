@@ -336,6 +336,53 @@
   border: 1px solid var(--border-default);
   background: var(--surface-sunken);
 }
+
+/* Upload control on image.* fields. */
+.ui-admin .cfield-img {
+  margin-top: 8px;
+}
+.ui-admin .cfield-img-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ui-admin .cfield-upload {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-default);
+  cursor: pointer;
+  transition: border-color var(--duration-base) ease, color var(--duration-base) ease;
+}
+.ui-admin .cfield-upload:hover:not(:disabled) {
+  border-color: var(--color-orange);
+  color: var(--color-orange);
+}
+.ui-admin .cfield-upload:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ui-admin .cfield-clear {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-error);
+  cursor: pointer;
+}
+.ui-admin .cfield-hint {
+  font-size: 11.5px;
+  color: var(--fg-subtle);
+}
 .ui-admin .filter-bar .search {
   min-width: 0;
 }

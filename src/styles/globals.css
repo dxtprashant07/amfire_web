@@ -9,6 +9,7 @@
 @import "./amfire-auth.css" layer(amfire);
 @import "./amfire-admin.css" layer(amfire);
 @import "./amfire-portal.css" layer(amfire);
+@import "./amfire-mobile.css" layer(amfire);
 @config "../../tailwind.config.ts";
 
 /* Tailwind v4 doesn't read tailwind.config.ts's `colors` block into

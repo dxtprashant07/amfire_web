@@ -258,6 +258,27 @@ model SiteContent {
   @@map("site_content")
 }
 
+// ─── Media (admin-uploaded images) ─────────────────────────
+
+// Bytes live in Postgres rather than on disk so uploads survive on serverless
+// hosts, where the filesystem is read-only and per-request ephemeral. Served
+// by /api/media/[id] behind an immutable cache header. Swap `data` for an
+// object-storage key if the library ever outgrows the database.
+model Media {
+  id         String   @id @default(cuid())
+  filename   String
+  mimeType   String   @map("mime_type")
+  size       Int
+  width      Int?
+  height     Int?
+  data       Bytes
+  uploadedBy String?  @map("uploaded_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("media")
+}
+
 // ─── Audit Log ─────────────────────────────────────────────
 
 model AuditLog {
